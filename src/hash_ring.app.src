@@ -1,0 +1,12 @@
+%% -*- erlang -*-
+{application, hash_ring,
+ [
+  {description, "Consistent Hash Ring"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
