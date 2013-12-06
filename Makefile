@@ -1,4 +1,4 @@
-all: compile eunit                                                   
+all: compile xref eunit
 
 compile:
 	@./rebar compile
@@ -14,6 +14,9 @@ eunit:
 
 edoc:
 	@./rebar doc
+
+start:
+	erl -pa ebin
 
 .dialyzer.plt:
 	touch .dialyzer.plt
