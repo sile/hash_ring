@@ -10,7 +10,7 @@
          make/1,
          make/2,
          get_nodes/1,
-         get_owner_nodes/3
+         fold/4
         ]).
 
 -export_type([
@@ -18,7 +18,8 @@
               ring_node/0,
               hash_ring_module/0,
               option/0,
-              item/0
+              item/0,
+              fold_fun/0
              ]).
 
 %%--------------------------------------------------------------------------------
@@ -26,7 +27,7 @@
 %%--------------------------------------------------------------------------------
 -callback make([ring_node()], [option()]) -> impl_state().
 -callback get_nodes(impl_state()) -> [ring_node()].
--callback get_owner_nodes(item(), MaxOwnerCount::non_neg_integer(), impl_state()) -> [ring_node()].
+-callback fold(fold_fun(), item(), AccInitial::term(), impl_state()) -> AccResult::term().
 
 %%--------------------------------------------------------------------------------
 %% Macros & Records & Types
@@ -52,6 +53,8 @@
 
 -type impl_state() :: term().
 
+-type fold_fun() :: fun ((ring_node(), Acc::term()) -> {Continue::boolean(), AccNext::term()}).
+
 %%--------------------------------------------------------------------------------
 %% Exported Functions
 %%--------------------------------------------------------------------------------
@@ -73,8 +76,8 @@ get_nodes(Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
     Module:get_nodes(State).
 
-%% @doc アイテムの所有者となるノードを優先度が高い順に返す
--spec get_owner_nodes(item(), non_neg_integer(), ring()) -> [ring_node()].
-get_owner_nodes(Item, MaxOwnerCount, Ring) ->
+%% @doc アイテムの次に位置するノードから順に畳み込みを行う
+-spec fold(fold_fun(), item(), term(), ring()) -> Result::term().
+fold(Fun, Item, Initial, Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
-    Module:get_owner_nodes(Item, MaxOwnerCount, State).
+    Module:fold(Fun, Item, Initial, State).

@@ -11,7 +11,7 @@
 -export([
          make/2,
          get_nodes/1,
-         get_owner_nodes/3
+         fold/4
         ]).
 
 -export_type([
@@ -23,7 +23,7 @@
 %% Macros & Recors & Types
 %%--------------------------------------------------------------------------------
 -define(RING, ?MODULE).
--define(DEFAULT_VIRTUAL_NODE_COUNT_PER_HOST, 5).
+-define(DEFAULT_VIRTUAL_NODE_COUNT, 128). % 各ノードごとの仮想ノードの数
 -define(DEFAULT_HASH_ALGORITHM, md5).
 
 -record(?RING,
@@ -35,7 +35,7 @@
 
 -opaque ring() :: #?RING{}.
 
--type option() :: {virtual_node_count_per_host, pos_integer()}
+-type option() :: {virtual_node_count, pos_integer()}
                 | {hash_algorithm, crypto:hash_algorithms()}.
 
 %%--------------------------------------------------------------------------------
@@ -44,7 +44,7 @@
 %% @doc コンシステントハッシュリングを構築する
 -spec make([hash_ring:ring_node()], [option()]) -> ring().
 make(Nodes, Options) ->
-    VirtualNodeCount = proplists:get_value(virtual_node_count_per_host, Options, ?DEFAULT_VIRTUAL_NODE_COUNT_PER_HOST),
+    VirtualNodeCount = proplists:get_value(virtual_node_count, Options, ?DEFAULT_VIRTUAL_NODE_COUNT),
     HashAlgorithm    = proplists:get_value(hash_algorithm, Options, ?DEFAULT_HASH_ALGORITHM),
 
     VirtualNodes1 = lists:append([[begin 
@@ -64,13 +64,13 @@ make(Nodes, Options) ->
 get_nodes(Ring) ->
     Ring#?RING.nodes.
 
-%% @doc アイテムの所有者となるノードを優先度が高い順に返す
--spec get_owner_nodes(hash_ring:item(), non_neg_integer(), ring()) -> [hash_ring:ring_node()].
-get_owner_nodes(Item, MaxOwnerCount, Ring) ->
+%% @doc アイテムの次に位置するノードから順に畳み込みを行う
+-spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
+fold(Fun, Item, Initial, Ring) ->
     #?RING{hash_algorithm = HashAlgorithm, virtual_nodes = VirtualNodes} = Ring,
     ItemHash = hash_ring_util:calc_hash(HashAlgorithm, Item),
     Position = find_start_position(ItemHash, VirtualNodes),
-    collect_successor_nodes(Position, MaxOwnerCount, VirtualNodes).
+    fold_successor_nodes(Position, VirtualNodes, Fun, Initial).
 
 %%--------------------------------------------------------------------------------
 %% Internal Functions
@@ -91,22 +91,22 @@ find_start_position(ItemHash, VirtualNodes, Start, End) ->
         true                -> Current
     end.
 
--spec collect_successor_nodes(non_neg_integer(), non_neg_integer(), tuple()) -> [hash_ring:ring_node()].
-collect_successor_nodes(StartPosition, Count, VirtualNodes) ->
-    collect_successor_nodes(tuple_size(VirtualNodes), Count, StartPosition, VirtualNodes, gb_sets:empty(), []).
+-spec fold_successor_nodes(non_neg_integer(), tuple(), hash_ring:fold_fun(), term()) -> term().
+fold_successor_nodes(StartPosition, VirtualNodes, Fun, Initial) ->
+    fold_successor_nodes(tuple_size(VirtualNodes), StartPosition, VirtualNodes, Fun, Initial, []).
 
--spec collect_successor_nodes(non_neg_integer(), non_neg_integer(), non_neg_integer(), tuple(), gb_set(), [hash_ring:ring_node()]) -> [hash_ring:ring_node()].
-collect_successor_nodes(0, _, _, _, _, AccNodes) ->
-    lists:reverse(AccNodes);
-collect_successor_nodes(_, 0, _, _, _, AccNodes) ->
-    lists:reverse(AccNodes);
-collect_successor_nodes(RestNodes, RestCount, Position, VirtualNodes, NodeSet, AccNodes) when Position > tuple_size(VirtualNodes) ->
-    collect_successor_nodes(RestNodes, RestCount, 1, VirtualNodes, NodeSet, AccNodes);
-collect_successor_nodes(RestNodes, RestCount, Position, VirtualNodes, NodeSet, AccNodes) ->
+-spec fold_successor_nodes(non_neg_integer(), non_neg_integer(), tuple(), hash_ring:fold_fun(), term(), [hash_ring:ring_node()]) -> term().
+fold_successor_nodes(0, _, _, _, Acc, _) ->
+    Acc;
+fold_successor_nodes(RestNodes, Position, VirtualNodes, Fun, Acc, IteratedNodes) when Position > tuple_size(VirtualNodes) ->
+    fold_successor_nodes(RestNodes, 1, VirtualNodes, Fun, Acc, IteratedNodes);
+fold_successor_nodes(RestNodes, Position, VirtualNodes, Fun, Acc, IteratedNodes) ->
     {_, Node} = element(Position, VirtualNodes),
-    {NodeSet2, AccNodes2, RestCount2} =
-        case gb_sets:is_member(Node, NodeSet) of
-            true  -> {NodeSet, AccNodes, RestCount};
-            false -> {gb_sets:insert(Node, NodeSet), [Node | AccNodes], RestCount - 1}
-        end,
-    collect_successor_nodes(RestNodes - 1, RestCount2, Position + 1, VirtualNodes, NodeSet2, AccNodes2).
+    case lists:member(Node, IteratedNodes) of % NOTE: ノード数が多くなるとスケールしない
+        true  -> fold_successor_nodes(RestNodes - 1, Position + 1, VirtualNodes, Fun, Acc, IteratedNodes);
+        false ->
+            case Fun(Node, Acc) of
+                {false, Acc2} -> Acc2;
+                {true,  Acc2} -> fold_successor_nodes(RestNodes - 1, Position + 1, VirtualNodes, Fun, Acc2, [Node | IteratedNodes])
+            end
+    end.
