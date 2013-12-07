@@ -15,7 +15,7 @@ eunit:
 edoc:
 	@./rebar doc
 
-start:
+start: compile
 	erl -pa ebin
 
 .dialyzer.plt:
