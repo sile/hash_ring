@@ -55,7 +55,7 @@ make(Nodes, Options) ->
     VirtualNodes3 = list_to_tuple(VirtualNodes2),
     #?RING{
         virtual_nodes  = VirtualNodes3,
-        nodes          = Nodes,
+        nodes          = lists:usort(Nodes),
         hash_algorithm = HashAlgorithm
        }.
 
@@ -67,10 +67,10 @@ get_nodes(Ring) ->
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
 fold(Fun, Item, Initial, Ring) ->
-    #?RING{hash_algorithm = HashAlgorithm, virtual_nodes = VirtualNodes} = Ring,
+    #?RING{hash_algorithm = HashAlgorithm, virtual_nodes = VirtualNodes, nodes = Nodes} = Ring,
     ItemHash = hash_ring_util:calc_hash(HashAlgorithm, Item),
     Position = find_start_position(ItemHash, VirtualNodes),
-    fold_successor_nodes(Position, VirtualNodes, Fun, Initial).
+    fold_successor_nodes(length(Nodes), Position, VirtualNodes, Fun, Initial).
 
 %%--------------------------------------------------------------------------------
 %% Internal Functions
@@ -91,22 +91,22 @@ find_start_position(ItemHash, VirtualNodes, Start, End) ->
         true                -> Current
     end.
 
--spec fold_successor_nodes(non_neg_integer(), tuple(), hash_ring:fold_fun(), term()) -> term().
-fold_successor_nodes(StartPosition, VirtualNodes, Fun, Initial) ->
-    fold_successor_nodes(tuple_size(VirtualNodes), StartPosition, VirtualNodes, Fun, Initial, []).
+-spec fold_successor_nodes(non_neg_integer(), non_neg_integer(), tuple(), hash_ring:fold_fun(), term()) -> term().
+fold_successor_nodes(RestNodeCount, StartPosition, VirtualNodes, Fun, Initial) ->
+    fold_successor_nodes(RestNodeCount, StartPosition, VirtualNodes, Fun, Initial, []).
 
 -spec fold_successor_nodes(non_neg_integer(), non_neg_integer(), tuple(), hash_ring:fold_fun(), term(), [hash_ring:ring_node()]) -> term().
 fold_successor_nodes(0, _, _, _, Acc, _) ->
     Acc;
-fold_successor_nodes(RestNodes, Position, VirtualNodes, Fun, Acc, IteratedNodes) when Position > tuple_size(VirtualNodes) ->
-    fold_successor_nodes(RestNodes, 1, VirtualNodes, Fun, Acc, IteratedNodes);
-fold_successor_nodes(RestNodes, Position, VirtualNodes, Fun, Acc, IteratedNodes) ->
+fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNodes) when Position > tuple_size(VirtualNodes) ->
+    fold_successor_nodes(RestNodeCount, 1, VirtualNodes, Fun, Acc, IteratedNodes);
+fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNodes) ->
     {_, Node} = element(Position, VirtualNodes),
     case lists:member(Node, IteratedNodes) of % NOTE: ノード数が多くなるとスケールしない
-        true  -> fold_successor_nodes(RestNodes - 1, Position + 1, VirtualNodes, Fun, Acc, IteratedNodes);
+        true  -> fold_successor_nodes(RestNodeCount, Position + 1, VirtualNodes, Fun, Acc, IteratedNodes);
         false ->
             case Fun(Node, Acc) of
                 {false, Acc2} -> Acc2;
-                {true,  Acc2} -> fold_successor_nodes(RestNodes - 1, Position + 1, VirtualNodes, Fun, Acc2, [Node | IteratedNodes])
+                {true,  Acc2} -> fold_successor_nodes(RestNodeCount - 1, Position + 1, VirtualNodes, Fun, Acc2, [Node | IteratedNodes])
             end
     end.
