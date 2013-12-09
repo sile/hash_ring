@@ -28,9 +28,10 @@
 
 -record(?RING,
         {
-          virtual_nodes  :: tuple(),
-          nodes          :: [hash_ring:ring_node()],
-          hash_algorithm :: hash_ring:hash_algorithms()
+          virtual_node_hashes :: tuple(),
+          virtual_nodes       :: tuple(),
+          nodes               :: [hash_ring:ring_node()],
+          hash_algorithm      :: hash_ring:hash_algorithms()
         }).
 
 -opaque ring() :: #?RING{}.
@@ -52,11 +53,11 @@ make(Nodes, Options) ->
                                        {VirtualNodeHash, Node}
                                    end || I <- lists:seq(1, VirtualNodeCount)] || Node <- Nodes]),
     VirtualNodes2 = lists:sort(VirtualNodes1), % lists:keysort/2 だとハッシュ値に衝突がある場合に、順番が一意に定まらないので単なる sort/1 を使用する
-    VirtualNodes3 = list_to_tuple(VirtualNodes2),
     #?RING{
-        virtual_nodes  = VirtualNodes3,
-        nodes          = lists:usort(Nodes),
-        hash_algorithm = HashAlgorithm
+        virtual_node_hashes = list_to_tuple([Hash || {Hash, _} <- VirtualNodes2]),
+        virtual_nodes       = list_to_tuple([Node || {_, Node} <- VirtualNodes2]),
+        nodes               = lists:usort(Nodes),
+        hash_algorithm      = HashAlgorithm
        }.
 
 %% @doc ノード一覧を取得する
@@ -67,27 +68,27 @@ get_nodes(Ring) ->
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
 fold(Fun, Item, Initial, Ring) ->
-    #?RING{hash_algorithm = HashAlgorithm, virtual_nodes = VirtualNodes, nodes = Nodes} = Ring,
+    #?RING{hash_algorithm = HashAlgorithm, virtual_nodes = VirtualNodes, nodes = Nodes, virtual_node_hashes = VirtualNodeHashes} = Ring,
     ItemHash = hash_ring_util:calc_hash(HashAlgorithm, Item),
-    Position = find_start_position(ItemHash, VirtualNodes),
+    Position = find_start_position(ItemHash, VirtualNodeHashes),
     fold_successor_nodes(length(Nodes), Position, VirtualNodes, Fun, Initial).
 
 %%--------------------------------------------------------------------------------
 %% Internal Functions
 %%--------------------------------------------------------------------------------
 -spec find_start_position(term(), tuple()) -> non_neg_integer().
-find_start_position(ItemHash, VirtualNodes) ->
-    find_start_position(ItemHash, VirtualNodes, 1, tuple_size(VirtualNodes) + 1).
+find_start_position(ItemHash, VirtualNodeHashes) ->
+    find_start_position(ItemHash, VirtualNodeHashes, 1, tuple_size(VirtualNodeHashes) + 1).
 
 -spec find_start_position(term(), tuple(), non_neg_integer(), non_neg_integer()) -> non_neg_integer().
-find_start_position(_ItemHash, _VirtualNodes, Pos, Pos) ->
+find_start_position(_ItemHash, _VirtualNodeHashes, Pos, Pos) ->
     Pos;
-find_start_position(ItemHash, VirtualNodes, Start, End) ->
+find_start_position(ItemHash, VirtualNodeHashes, Start, End) ->
     Current = (Start + End) div 2,
-    {NodeHash, _} = element(Current, VirtualNodes),
+    NodeHash = element(Current, VirtualNodeHashes),
     if
-        NodeHash < ItemHash -> find_start_position(ItemHash, VirtualNodes, Current + 1, End);
-        NodeHash > ItemHash -> find_start_position(ItemHash, VirtualNodes, Start, Current);
+        NodeHash < ItemHash -> find_start_position(ItemHash, VirtualNodeHashes, Current + 1, End);
+        NodeHash > ItemHash -> find_start_position(ItemHash, VirtualNodeHashes, Start, Current);
         true                -> Current
     end.
 
@@ -101,7 +102,7 @@ fold_successor_nodes(0, _, _, _, Acc, _) ->
 fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNodes) when Position > tuple_size(VirtualNodes) ->
     fold_successor_nodes(RestNodeCount, 1, VirtualNodes, Fun, Acc, IteratedNodes);
 fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNodes) ->
-    {_, Node} = element(Position, VirtualNodes),
+    Node = element(Position, VirtualNodes),
     case lists:member(Node, IteratedNodes) of % NOTE: ノード数が多くなるとスケールしない
         true  -> fold_successor_nodes(RestNodeCount, Position + 1, VirtualNodes, Fun, Acc, IteratedNodes);
         false ->

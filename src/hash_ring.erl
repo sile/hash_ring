@@ -74,6 +74,8 @@ make(Nodes, Options) ->
     #?RING{impl_module = Module, impl_state = State}.
 
 %% @doc ノード一覧を取得する
+%%
+%% 返り値のノードは昇順にソートされている
 -spec get_nodes(ring()) -> [ring_node()].
 get_nodes(Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
