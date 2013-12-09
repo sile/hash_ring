@@ -2,7 +2,7 @@
 {application, hash_ring,
  [
   {description, "Consistent Hash Ring"},
-  {vsn, "0.0.2"},
+  {vsn, "0.0.4"},
   {registered, []},
   {applications, [
                   kernel,

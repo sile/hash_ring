@@ -23,7 +23,8 @@
 %% Macros & Recors & Types
 %%--------------------------------------------------------------------------------
 -define(RING, ?MODULE).
--define(DEFAULT_VIRTUAL_NODE_COUNT, 128). % 各ノードごとの仮想ノードの数
+-define(DEFAULT_VIRTUAL_NODE_COUNT, 1024). % 各ノードごとの仮想ノードの数
+-define(DEFAULT_MAX_HASH_BYTE_SIZE, 4).
 -define(DEFAULT_HASH_ALGORITHM, md5).
 
 -record(?RING,
@@ -31,12 +32,14 @@
           virtual_node_hashes :: tuple(),
           virtual_nodes       :: tuple(),
           nodes               :: [hash_ring:ring_node()],
+          hash_mask           :: integer(),
           hash_algorithm      :: hash_ring:hash_algorithms()
         }).
 
 -opaque ring() :: #?RING{}.
 
 -type option() :: {virtual_node_count, pos_integer()}
+                | {max_hash_byte_size, pos_integer() | nolimit}
                 | {hash_algorithm, hash_ring:hash_algorithms()}.
 
 %%--------------------------------------------------------------------------------
@@ -46,10 +49,16 @@
 -spec make([hash_ring:ring_node()], [option()]) -> ring().
 make(Nodes, Options) ->
     VirtualNodeCount = proplists:get_value(virtual_node_count, Options, ?DEFAULT_VIRTUAL_NODE_COUNT),
+    MaxHashByteSize  = proplists:get_value(max_hash_byte_size, Options, ?DEFAULT_MAX_HASH_BYTE_SIZE),
     HashAlgorithm    = proplists:get_value(hash_algorithm, Options, ?DEFAULT_HASH_ALGORITHM),
 
+    HashMask = case MaxHashByteSize of
+                   nolimit -> -1;
+                   _       -> (1 bsl MaxHashByteSize * 8) - 1
+               end,
+    
     VirtualNodes1 = lists:append([[begin 
-                                       VirtualNodeHash = hash_ring_util:calc_hash(HashAlgorithm, {I, Node}),
+                                       VirtualNodeHash = hash_ring_util:calc_hash(HashAlgorithm, {I, Node}) band HashMask,
                                        {VirtualNodeHash, Node}
                                    end || I <- lists:seq(1, VirtualNodeCount)] || Node <- Nodes]),
     VirtualNodes2 = lists:sort(VirtualNodes1), % lists:keysort/2 だとハッシュ値に衝突がある場合に、順番が一意に定まらないので単なる sort/1 を使用する
@@ -57,6 +66,7 @@ make(Nodes, Options) ->
         virtual_node_hashes = list_to_tuple([Hash || {Hash, _} <- VirtualNodes2]),
         virtual_nodes       = list_to_tuple([Node || {_, Node} <- VirtualNodes2]),
         nodes               = lists:usort(Nodes),
+        hash_mask           = HashMask,
         hash_algorithm      = HashAlgorithm
        }.
 
@@ -68,8 +78,9 @@ get_nodes(Ring) ->
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
 fold(Fun, Item, Initial, Ring) ->
-    #?RING{hash_algorithm = HashAlgorithm, virtual_nodes = VirtualNodes, nodes = Nodes, virtual_node_hashes = VirtualNodeHashes} = Ring,
-    ItemHash = hash_ring_util:calc_hash(HashAlgorithm, Item),
+    #?RING{hash_algorithm = HashAlgorithm, hash_mask = HashMask, nodes = Nodes,
+           virtual_nodes = VirtualNodes, virtual_node_hashes = VirtualNodeHashes} = Ring,
+    ItemHash = hash_ring_util:calc_hash(HashAlgorithm, Item) band HashMask,
     Position = find_start_position(ItemHash, VirtualNodeHashes),
     fold_successor_nodes(length(Nodes), Position, VirtualNodes, Fun, Initial).
 
