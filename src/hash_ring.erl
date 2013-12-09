@@ -56,7 +56,7 @@
 
 -type fold_fun() :: fun ((ring_node(), Acc::term()) -> {Continue::boolean(), AccNext::term()}).
 
--type hash_algorithms() :: crc32 | crypto:hash_algorithms().
+-type hash_algorithms() :: crc32 | phash2 | crypto:hash_algorithms().
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
