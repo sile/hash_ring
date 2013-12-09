@@ -30,13 +30,13 @@
         {
           virtual_nodes  :: tuple(),
           nodes          :: [hash_ring:ring_node()],
-          hash_algorithm :: crypto:hash_algorithms()
+          hash_algorithm :: hash_ring:hash_algorithms()
         }).
 
 -opaque ring() :: #?RING{}.
 
 -type option() :: {virtual_node_count, pos_integer()}
-                | {hash_algorithm, crypto:hash_algorithms()}.
+                | {hash_algorithm, hash_ring:hash_algorithms()}.
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions

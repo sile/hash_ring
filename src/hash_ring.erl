@@ -19,7 +19,8 @@
               hash_ring_module/0,
               option/0,
               item/0,
-              fold_fun/0
+              fold_fun/0,
+              hash_algorithms/0
              ]).
 
 %%--------------------------------------------------------------------------------
@@ -54,6 +55,8 @@
 -type impl_state() :: term().
 
 -type fold_fun() :: fun ((ring_node(), Acc::term()) -> {Continue::boolean(), AccNext::term()}).
+
+-type hash_algorithms() :: crc32 | crypto:hash_algorithms().
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
