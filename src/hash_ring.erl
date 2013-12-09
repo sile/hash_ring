@@ -19,7 +19,8 @@
               hash_ring_module/0,
               option/0,
               item/0,
-              fold_fun/0
+              fold_fun/0,
+              hash_algorithms/0
              ]).
 
 %%--------------------------------------------------------------------------------
@@ -55,6 +56,8 @@
 
 -type fold_fun() :: fun ((ring_node(), Acc::term()) -> {Continue::boolean(), AccNext::term()}).
 
+-type hash_algorithms() :: crc32 | crypto:hash_algorithms().
+
 %%--------------------------------------------------------------------------------
 %% Exported Functions
 %%--------------------------------------------------------------------------------
@@ -71,6 +74,8 @@ make(Nodes, Options) ->
     #?RING{impl_module = Module, impl_state = State}.
 
 %% @doc ノード一覧を取得する
+%%
+%% 返り値のノードは昇順にソートされている
 -spec get_nodes(ring()) -> [ring_node()].
 get_nodes(Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,

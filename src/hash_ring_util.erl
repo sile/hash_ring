@@ -14,6 +14,8 @@
 %%--------------------------------------------------------------------------------
 %% Exported Functions
 %%--------------------------------------------------------------------------------
--spec calc_hash(crypto:hash_algorithms(), hash_ring:ring_node()) -> non_neg_integer().
+-spec calc_hash(hash_ring:hash_algorithms(), hash_ring:ring_node()) -> non_neg_integer().
+calc_hash(crc32, Node) ->
+    erlang:crc32(term_to_binary(Node));
 calc_hash(HashAlgorithm, Node) ->
     crypto:bytes_to_integer(crypto:hash(HashAlgorithm, term_to_binary(Node))).
