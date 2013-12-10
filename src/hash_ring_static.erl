@@ -39,7 +39,7 @@
 -opaque ring() :: #?RING{}.
 
 -type option() :: {virtual_node_count, pos_integer()}
-                | {max_hash_byte_size, pos_integer() | nolimit}
+                | {max_hash_byte_size, pos_integer()}
                 | {hash_algorithm, hash_ring:hash_algorithms()}.
 
 %%--------------------------------------------------------------------------------
@@ -49,13 +49,11 @@
 -spec make([hash_ring:ring_node()], [option()]) -> ring().
 make(Nodes, Options) ->
     VirtualNodeCount = proplists:get_value(virtual_node_count, Options, ?DEFAULT_VIRTUAL_NODE_COUNT),
-    MaxHashByteSize  = proplists:get_value(max_hash_byte_size, Options, ?DEFAULT_MAX_HASH_BYTE_SIZE),
     HashAlgorithm    = proplists:get_value(hash_algorithm, Options, ?DEFAULT_HASH_ALGORITHM),
+    MaxHashByteSize0 = proplists:get_value(max_hash_byte_size, Options, ?DEFAULT_MAX_HASH_BYTE_SIZE),
+    MaxHashByteSize  = min(MaxHashByteSize0, hash_ring_util:hash_byte_size(HashAlgorithm)),
 
-    HashMask = case MaxHashByteSize of
-                   nolimit -> -1;
-                   _       -> (1 bsl MaxHashByteSize * 8) - 1
-               end,
+    HashMask = (1 bsl MaxHashByteSize * 8) - 1,
     
     VirtualNodes1 = lists:append([[begin 
                                        VirtualNodeHash = hash_ring_util:calc_hash(HashAlgorithm, {I, Node}) band HashMask,
@@ -63,7 +61,7 @@ make(Nodes, Options) ->
                                    end || I <- lists:seq(1, VirtualNodeCount)] || Node <- Nodes]),
     VirtualNodes2 = lists:sort(VirtualNodes1), % lists:keysort/2 だとハッシュ値に衝突がある場合に、順番が一意に定まらないので単なる sort/1 を使用する
     #?RING{
-        virtual_node_hashes = list_to_tuple([Hash || {Hash, _} <- VirtualNodes2]),
+        virtual_node_hashes = erlang:append_element(list_to_tuple([Hash || {Hash, _} <- VirtualNodes2]), HashMask + 1), % append sentinel value
         virtual_nodes       = list_to_tuple([Node || {_, Node} <- VirtualNodes2]),
         nodes               = lists:usort(Nodes),
         hash_mask           = HashMask,
@@ -81,26 +79,32 @@ fold(Fun, Item, Initial, Ring) ->
     #?RING{hash_algorithm = HashAlgorithm, hash_mask = HashMask, nodes = Nodes,
            virtual_nodes = VirtualNodes, virtual_node_hashes = VirtualNodeHashes} = Ring,
     ItemHash = hash_ring_util:calc_hash(HashAlgorithm, Item) band HashMask,
-    Position = find_start_position(ItemHash, VirtualNodeHashes),
+    PartitionSize = max(1, (HashMask  + 1) div tuple_size(VirtualNodeHashes)),
+    Position = find_start_position(ItemHash, PartitionSize, VirtualNodeHashes),
     fold_successor_nodes(length(Nodes), Position, VirtualNodes, Fun, Initial).
 
 %%--------------------------------------------------------------------------------
 %% Internal Functions
 %%--------------------------------------------------------------------------------
--spec find_start_position(term(), tuple()) -> non_neg_integer().
-find_start_position(ItemHash, VirtualNodeHashes) ->
-    find_start_position(ItemHash, VirtualNodeHashes, 1, tuple_size(VirtualNodeHashes) + 1).
+-spec find_start_position(term(), pos_integer(), tuple()) -> non_neg_integer().
+find_start_position(ItemHash, PartitionSize, VirtualNodeHashes) ->
+    find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, 1, (ItemHash div PartitionSize) + 1, tuple_size(VirtualNodeHashes) + 1).
 
--spec find_start_position(term(), tuple(), non_neg_integer(), non_neg_integer()) -> non_neg_integer().
-find_start_position(_ItemHash, _VirtualNodeHashes, Pos, Pos) ->
-    Pos;
-find_start_position(ItemHash, VirtualNodeHashes, Start, End) ->
-    Current = (Start + End) div 2,
+-spec find_start_position(term(), pos_integer(), tuple(), pos_integer(), pos_integer(), pos_integer()) -> pos_integer().
+find_start_position(_ItemHash, _PartitionSize, _VirtualNodeHashes, Position, _, Position) ->
+    Position;
+find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, Start, Current0, End) ->
+    Current  = min(max(Start, Current0), End - 1),
     NodeHash = element(Current, VirtualNodeHashes),
-    if
-        NodeHash < ItemHash -> find_start_position(ItemHash, VirtualNodeHashes, Current + 1, End);
-        NodeHash > ItemHash -> find_start_position(ItemHash, VirtualNodeHashes, Start, Current);
-        true                -> Current
+    case NodeHash of
+        ItemHash -> Current;
+        _        ->
+            Delta = ItemHash - NodeHash,
+            Next  = Current + (Delta div PartitionSize),
+            case Delta > 0 of
+                true  -> find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, Current + 1, Next + 1, End);
+                false -> find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, Start, Next - 1, Current)
+            end                    
     end.
 
 -spec fold_successor_nodes(non_neg_integer(), non_neg_integer(), tuple(), hash_ring:fold_fun(), term()) -> term().

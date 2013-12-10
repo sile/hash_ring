@@ -8,7 +8,8 @@
 %% Exported API
 %%--------------------------------------------------------------------------------
 -export([
-         calc_hash/2
+         calc_hash/2,
+         hash_byte_size/1
         ]).
 
 %%--------------------------------------------------------------------------------
@@ -21,3 +22,10 @@ calc_hash(phash2, Node) ->
     erlang:phash2(Node, 16#100000000);
 calc_hash(HashAlgorithm, Node) ->
     crypto:bytes_to_integer(crypto:hash(HashAlgorithm, term_to_binary(Node))).
+
+-spec hash_byte_size(hash_ring:hash_algorithms()) -> pos_integer().
+hash_byte_size(crc32)  -> 4;
+hash_byte_size(phash2) -> 4;
+hash_byte_size(md4)    -> 16;
+hash_byte_size(sha)    -> 20;
+hash_byte_size(sha256) -> 32.
