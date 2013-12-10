@@ -26,6 +26,6 @@ calc_hash(HashAlgorithm, Node) ->
 -spec hash_byte_size(hash_ring:hash_algorithms()) -> pos_integer().
 hash_byte_size(crc32)  -> 4;
 hash_byte_size(phash2) -> 4;
-hash_byte_size(md4)    -> 16;
+hash_byte_size(md5)    -> 16;
 hash_byte_size(sha)    -> 20;
 hash_byte_size(sha256) -> 32.

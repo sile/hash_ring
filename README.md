@@ -9,12 +9,12 @@ Erlangによるコンシステントハッシュ法を使ったノードリン�
 %% ハッシュリングの作成
 > Ring = hash_ring:make([a, b, c, d, e]).
 
-%% アイテムを所有するノード一覧の取得
-> hash_ring:get_owner_nodes(item_1, 2, Ring).
-[a, e]
+%% アイテムを起点に、ノードを畳み込む
+> hash_ring:fold(fun (Node, Acc) -> {true, [Node | Acc]} end, item_1, [], Ring).
+[a,b,d,e,c]
 
-> hash_ring:get_owner_nodes(item_2, 3, Ring).
-[d, c, a]
+> hash_ring:fold(fun (Node, Acc) -> {true, [Node | Acc]} end, item_2, [], Ring).
+[e,b,a,c,d]
 ```
 
 参考URLメモ
