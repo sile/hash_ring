@@ -1,4 +1,4 @@
-%% @copyright 2013 Takeru Ohta <phjgt308@gmail.com>
+%% @copyright 2013-2014 Takeru Ohta <phjgt308@gmail.com>
 %%
 %% @doc コンシステントハッシュリング操作用のインターフェースモジュール
 -module(hash_ring).
@@ -9,8 +9,12 @@
 -export([
          make/1,
          make/2,
+         is_ring/1,
+         add_nodes/2,
+         remove_nodes/2,
          get_nodes/1,
-         fold/4
+         fold/4,
+         find_node/2
         ]).
 
 -export_type([
@@ -27,6 +31,9 @@
 %% Behaviour API
 %%--------------------------------------------------------------------------------
 -callback make([ring_node()], [option()]) -> impl_state().
+-callback is_ring(impl_state() | term()) -> boolean().
+-callback add_nodes([ring_node()], impl_state()) -> impl_state().
+-callback remove_nodes([ring_node()], impl_state()) -> impl_state().
 -callback get_nodes(impl_state()) -> [ring_node()].
 -callback fold(fold_fun(), item(), AccInitial::term(), impl_state()) -> AccResult::term().
 
@@ -73,6 +80,25 @@ make(Nodes, Options) ->
     State = Module:make(Nodes, Options),
     #?RING{impl_module = Module, impl_state = State}.
 
+%% @doc 引数の値が適切に生成されたリングオブジェクトかどうかを判定する
+-spec is_ring(ring() | term()) -> boolean().
+is_ring(#?RING{impl_module = M, impl_state = S}) -> M:is_ring(S);
+is_ring(_)                                       -> false.
+
+%% @doc ノード群を追加する
+-spec add_nodes([ring_node()], ring()) -> ring().
+add_nodes(Nodes, Ring) ->
+    #?RING{impl_module = Module, impl_state = State0} = Ring,
+    State1 = Module:add_nodes(Nodes, State0),
+    Ring#?RING{impl_state = State1}.
+
+%% @doc ノード群を削除する
+-spec remove_nodes([ring_node()], ring()) -> ring().
+remove_nodes(Nodes, Ring) ->
+    #?RING{impl_module = Module, impl_state = State0} = Ring,
+    State1 = Module:remove_nodes(Nodes, State0),
+    Ring#?RING{impl_state = State1}.
+
 %% @doc ノード一覧を取得する
 %%
 %% 返り値のノードは昇順にソートされている
@@ -86,3 +112,13 @@ get_nodes(Ring) ->
 fold(Fun, Item, Initial, Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
     Module:fold(Fun, Item, Initial, State).
+
+%% @doc 指定のアイテムを担当するノードを検索する
+%%
+%% リングが空の場合は`error'が返される
+-spec find_node(item(), ring()) -> {ok, ring_node()} | error.
+find_node(Item, Ring) ->
+    fold(fun (Node, _) -> {false, {ok, Node}} end,
+         Item,
+         error,
+         Ring).
