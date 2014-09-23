@@ -21,14 +21,16 @@ make_test_() ->
       fun () ->
               Ring = ?MAKE_STATIC_RING([]),
               ?assert(hash_ring:is_ring(Ring)),
-              ?assertEqual([], hash_ring:get_nodes(Ring))
+              ?assertEqual([], hash_ring:get_nodes(Ring)),
+              ?assertEqual(0, hash_ring:get_node_count(Ring))
       end},
      {"Creates a non-empty ring",
       fun () ->
               Nodes = [a, b, c],
               Ring = ?MAKE_STATIC_RING(Nodes),
               ?assert(hash_ring:is_ring(Ring)),
-              ?assertEqual(Nodes, hash_ring:get_nodes(Ring))
+              ?assertEqual(Nodes, hash_ring:get_nodes(Ring)),
+              ?assertEqual(3, hash_ring:get_node_count(Ring))
       end}
     ].
 

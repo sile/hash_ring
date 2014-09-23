@@ -13,6 +13,7 @@
          add_nodes/2,
          remove_nodes/2,
          get_nodes/1,
+         get_node_count/1,
          fold/4,
          find_node/2
         ]).
@@ -35,6 +36,7 @@
 -callback add_nodes([ring_node()], impl_state()) -> impl_state().
 -callback remove_nodes([ring_node()], impl_state()) -> impl_state().
 -callback get_nodes(impl_state()) -> [ring_node()].
+-callback get_node_count(impl_state()) -> non_neg_integer().
 -callback fold(fold_fun(), item(), AccInitial::term(), impl_state()) -> AccResult::term().
 
 %%--------------------------------------------------------------------------------
@@ -106,6 +108,12 @@ remove_nodes(Nodes, Ring) ->
 get_nodes(Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
     Module:get_nodes(State).
+
+%% @doc ノードの個数を取得する
+-spec get_node_count(ring()) -> non_neg_integer().
+get_node_count(Ring) ->
+    #?RING{impl_module = Module, impl_state = State} = Ring,
+    Module:get_node_count(State).
 
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(fold_fun(), item(), term(), ring()) -> Result::term().

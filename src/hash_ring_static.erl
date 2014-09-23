@@ -15,6 +15,7 @@
          add_nodes/2,
          remove_nodes/2,
          get_nodes/1,
+         get_node_count/1,
          fold/4
         ]).
 
@@ -120,6 +121,11 @@ remove_nodes(Nodes, Ring) ->
 -spec get_nodes(ring()) -> [hash_ring:ring_node()].
 get_nodes(Ring) ->
     Ring#?RING.nodes.
+
+%% @see hash_ring:get_node_count/1
+-spec get_node_count(ring()) -> non_neg_integer().
+get_node_count(Ring) ->
+    Ring#?RING.node_count.
 
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
