@@ -15,7 +15,8 @@
          get_nodes/1,
          get_node_count/1,
          fold/4,
-         find_node/2
+         find_node/2,
+         collect_nodes/3
         ]).
 
 -export_type([
@@ -130,3 +131,17 @@ find_node(Item, Ring) ->
          Item,
          error,
          Ring).
+
+%% @doc 指定のアイテムを担当するノードを優先順位が高い順に最大`N'個集める
+-spec collect_nodes(item(), non_neg_integer(), ring()) -> [ring_node()].
+collect_nodes(Item, N, Ring) ->
+    {_, Nodes} =
+        fold(fun (_Node, {Rest, Acc}) when Rest =< 0 ->
+                     {false, {Rest, Acc}};
+                 (Node, {Rest, Acc}) ->
+                     {Rest > 1, {Rest - 1, [Node | Acc]}}
+             end,
+             Item,
+             {N, []},
+             Ring),
+    lists:reverse(Nodes).

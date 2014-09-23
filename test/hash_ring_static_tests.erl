@@ -75,6 +75,18 @@ find_test_() ->
       end}
     ].
 
+collect_nodes_test_() ->
+    [
+     {"指定数だけノードを集める",
+      fun () ->
+              Ring = ?MAKE_STATIC_RING(lists:seq(1, 100)),
+              ?assertMatch([],     hash_ring:collect_nodes(hoge, 0, Ring)),
+              ?assertMatch([_],    hash_ring:collect_nodes(hoge, 1, Ring)),
+              ?assertMatch([_, _], hash_ring:collect_nodes(hoge, 2, Ring))
+      end}
+    ].
+
+
 fold_test_() ->
     [
      {"空リングに対するfoldは初期値がそのまま返される",
