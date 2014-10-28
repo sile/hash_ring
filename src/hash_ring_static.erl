@@ -21,7 +21,8 @@
 
 -export_type([
               ring/0,
-              option/0
+              option/0,
+              key_fun/0
              ]).
 
 %%--------------------------------------------------------------------------------
@@ -40,15 +41,19 @@
           nodes               :: [hash_ring:ring_node()],
           node_count          :: non_neg_integer(),
           hash_mask           :: integer(),
-          hash_algorithm      :: hash_ring:hash_algorithms()
+          hash_algorithm      :: hash_ring:hash_algorithms(),
+          key_fun             :: key_fun()
         }).
 
 -opaque ring() :: #?RING{}.
 
 -type option() :: {virtual_node_count, pos_integer()}
+                | {node_key_fun, key_fun()}
                 | {max_hash_byte_size, pos_integer()}
                 | {hash_algorithm, hash_ring:hash_algorithms()}
                 | {sentinel_node, term()}. % for unit-test
+
+-type key_fun() :: fun ((hash_ring:ring_node()) -> Key::term()).
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
@@ -72,7 +77,8 @@ make(Nodes, Options) ->
             nodes               = [],
             node_count          = 0,
             hash_mask           = HashMask,
-            hash_algorithm      = HashAlgorithm
+            hash_algorithm      = HashAlgorithm,
+            key_fun             = proplists:get_value(node_key_fun, Options, fun hash_ring_util:identity/1)
            },
     add_nodes(Nodes, Ring).
 
@@ -84,9 +90,11 @@ is_ring(_)        -> false.
 %% @doc ノード群を追加する
 -spec add_nodes([hash_ring:ring_node()], ring()) -> ring().
 add_nodes(Nodes, Ring) ->
-    #?RING{virtual_node_count = VirtualNodeCount, virtual_node_hashes = VirtualNodeHashes0, virtual_nodes = VirtualNodes0, nodes = Nodes0} = Ring,
+    #?RING{virtual_node_count = VirtualNodeCount, virtual_node_hashes = VirtualNodeHashes0, virtual_nodes = VirtualNodes0,
+           nodes = Nodes0, key_fun = KeyFun} = Ring,
 
-    VirtualNodes1 = [{hash({I, Node}, Ring), Node} || I <- lists:seq(1, VirtualNodeCount), Node <- Nodes],
+    Keys = lists:map(KeyFun, Nodes),
+    VirtualNodes1 = [{hash({I, Key}, Ring), Node} || I <- lists:seq(1, VirtualNodeCount), {Key, Node} <- lists:zip(Keys, Nodes)],
     VirtualNodes2 = lists:sort(VirtualNodes1), % lists:keysort/2 だとハッシュ値に衝突がある場合に、順番が一意に定まらないので単なる sort/1 を使用する
     VirtualNodes3 = lists:umerge(VirtualNodes2, lists:zip(tuple_to_list(VirtualNodeHashes0), tuple_to_list(VirtualNodes0))),
 

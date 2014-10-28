@@ -9,7 +9,8 @@
 %%--------------------------------------------------------------------------------
 -export([
          calc_hash/2,
-         hash_byte_size/1
+         hash_byte_size/1,
+         identity/1
         ]).
 
 %%--------------------------------------------------------------------------------
@@ -29,3 +30,6 @@ hash_byte_size(phash2) -> 4;
 hash_byte_size(md5)    -> 16;
 hash_byte_size(sha)    -> 20;
 hash_byte_size(sha256) -> 32.
+
+-spec identity(term()) -> term().
+identity(X) -> X.
