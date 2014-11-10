@@ -29,7 +29,7 @@
 
 -type key() :: term().
 -type data() :: term().
--type weight() :: number(). % positive number
+-type weight() :: number(). % non negative number
 
 -type options() :: [option()].
 -type option() :: {weight, weight()}.
@@ -55,7 +55,7 @@ make(Key, Data) ->
 -spec make(key(), data(), options()) -> ring_node().
 make(Key, Data, Options) ->
     Weight = proplists:get_value(weight, Options, 1),
-    _ = (is_number(Weight) andalso Weight > 0) orelse error(badarg, [Key, Data, Options]),
+    _ = (is_number(Weight) andalso Weight >= 0) orelse error(badarg, [Key, Data, Options]),
 
     #?NODE{
         key    = Key,

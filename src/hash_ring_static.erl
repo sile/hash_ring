@@ -49,7 +49,7 @@
                 | {hash_algorithm, hash_ring:hash_algorithms()}
                 | {sentinel_key, hash_ring_node:key()}. % for unit-test
 
-%-type virtual_node() :: {Hash::non_neg_integer(), Sequence::pos_integer(), hash_ring:ring_node()}.
+-type virtual_node() :: {Hash::non_neg_integer(), Sequence::non_neg_integer(), hash_ring:ring_node()}.
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
@@ -68,7 +68,7 @@ make(Nodes, Options) ->
     Ring =
         #?RING{
             virtual_node_count = VirtualNodeCount,
-            vnodes             = {{HashMask + 1, 1, hash_ring_node:make(SentinelKey)}}, % store sentinel
+            vnodes             = {{HashMask + 1, 0, hash_ring_node:make(SentinelKey)}}, % store sentinel
             nodes              = [],
             node_count         = 0,
             hash_mask          = HashMask,
@@ -84,16 +84,20 @@ is_ring(_)        -> false.
 %% @doc ノード群を追加する
 -spec add_nodes([hash_ring:ring_node()], ring()) -> ring().
 add_nodes(Nodes, Ring) ->
-    #?RING{virtual_node_count = VirtualNodeCount, vnodes = VirtualNodes0, nodes = Nodes0} = Ring,
+    #?RING{vnodes = VirtualNodes0, nodes = Nodes0} = Ring,
 
-    VirtualNodes1 = [{hash({I, hash_ring_node:get_key(Node)}, Ring), I, Node} || I <- lists:seq(1, VirtualNodeCount), Node <- Nodes],
+    UniqNodes = lists:usort(fun node_less_than_or_equal_to/2, Nodes),
+
+    VirtualNodes1 =
+        lists:foldl(fun (Node, Acc) -> add_node(Node, Acc, Ring) end,
+                    tuple_to_list(VirtualNodes0),
+                    UniqNodes),
     VirtualNodes2 = lists:sort(VirtualNodes1), % lists:keysort/2 だとハッシュ値に衝突がある場合に、順番が一意に定まらないので単なる sort/1 を使用する
-    VirtualNodes3 = lists:umerge(VirtualNodes2, tuple_to_list(VirtualNodes0)),
 
-    Nodes1 = lists:usort(Nodes0 ++ Nodes),
+    Nodes1 = lists:umerge(fun node_less_than_or_equal_to/2, UniqNodes, Nodes0),
 
     Ring#?RING{
-            vnodes     = list_to_tuple(VirtualNodes3),
+            vnodes     = list_to_tuple(VirtualNodes2),
             nodes      = Nodes1,
             node_count = length(Nodes1)
            }.
@@ -104,10 +108,11 @@ remove_nodes(Keys, Ring) ->
     #?RING{vnodes = VirtualNodes0, nodes = Nodes0} = Ring,
     KeySet = gb_sets:from_list(Keys),
 
-    VirtualNodes1 = lists:filter(fun ({_, _, N}) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end,
-                                 tuple_to_list(VirtualNodes0)),
-
-    Nodes1 = lists:filter(fun (N) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end, Nodes0),
+    VirtualNodes1 =
+        lists:filter(fun ({_, _, N}) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end,
+                     tuple_to_list(VirtualNodes0)),
+    Nodes1 =
+        lists:filter(fun (N) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end, Nodes0),
 
     Ring#?RING{
             vnodes     = list_to_tuple(VirtualNodes1),
@@ -127,6 +132,8 @@ get_node_count(Ring) ->
 
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
+fold(_, _, Initial, #?RING{vnodes = {_}}) ->
+    Initial;
 fold(Fun, Item, Initial, Ring) ->
     #?RING{hash_mask = HashMask, node_count = NodeCount, vnodes = VirtualNodes} = Ring,
     ItemHash = hash(Item, Ring),
@@ -177,6 +184,43 @@ fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNo
                 {true,  Acc2} -> fold_successor_nodes(RestNodeCount - 1, Position + 1, VirtualNodes, Fun, Acc2, gb_sets:add(Node, IteratedNodes))
             end
     end.
+
+-spec add_node(hash_ring:ring_node(), [virtual_node()], ring()) -> [virtual_node()].
+add_node(Node, VirtualNodes, Ring) ->
+    #?RING{nodes = ExistingNodes, virtual_node_count = BaseCount} = Ring,
+    VirtualNodeCount = hash_ring_node:calc_virtual_node_count(BaseCount, Node),
+    case node_find(hash_ring_node:get_key(Node), ExistingNodes) of
+        error     -> add_virtual_nodes(Node, VirtualNodes, 0, VirtualNodeCount, Ring);
+        {ok, Old} ->
+            OldCount = hash_ring_node:calc_virtual_node_count(BaseCount, Old),
+            case OldCount =< VirtualNodeCount of
+                true  -> add_virtual_nodes(Node, VirtualNodes, OldCount, VirtualNodeCount, Ring);
+                false -> remove_virtual_nodes(Node, VirtualNodes, VirtualNodeCount)
+            end
+    end.
+
+-spec add_virtual_nodes(hash_ring:ring_node(), [virtual_node()], non_neg_integer(), non_neg_integer(), ring()) -> [virtual_node()].
+add_virtual_nodes(Node, VirtualNodes, Start, End, Ring) ->
+    Key = hash_ring_node:get_key(Node),
+    [{hash({Seq, Key}, Ring), Seq, Node} || Seq <- lists:seq(Start, End - 1)] ++ VirtualNodes.
+
+-spec remove_virtual_nodes(hash_ring:ring_node(), [virtual_node()], non_neg_integer()) -> [virtual_node()].
+remove_virtual_nodes(Node, VirtualNodes, End) ->
+    Key = hash_ring_node:get_key(Node),
+    lists:filter(fun ({_, Seq, N}) -> Seq < End orelse hash_ring_node:get_key(N) =/= Key end,
+                 VirtualNodes).
+
+-spec node_find(hash_ring_node:key(), [hash_ring:ring_node()]) -> {ok, hash_ring:ring_node()} | error.
+node_find(_Key, [])     -> error;
+node_find(Key, [H | T]) ->
+    case Key =:= hash_ring_node:get_key(H) of
+        true  -> {ok, H};
+        false -> node_find(Key, T)
+    end.
+
+-spec node_less_than_or_equal_to(hash_ring:ring_node(), hash_ring:ring_node()) -> boolean().
+node_less_than_or_equal_to(A, B) ->
+    hash_ring_node:get_key(A) =< hash_ring_node:get_key(B).
 
 -spec hash(term(), ring()) -> non_neg_integer().
 hash(X, Ring) ->

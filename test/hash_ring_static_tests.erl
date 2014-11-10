@@ -43,6 +43,24 @@ add_nodes_test_() ->
               Ring0 = ?MAKE_STATIC_RING(Nodes),
               Ring1 = lists:foldl(fun hash_ring:add_nodes/2, ?MAKE_STATIC_RING([]), [[N] || N <- Nodes]),
               ?assertEqual(Ring0, Ring1)
+      end},
+     {"追加後に重みの変更が可能",
+      fun () ->
+              Node0 = hash_ring_node:make(a, a, [{weight, 1}]),
+              Ring0 = ?MAKE_STATIC_RING([Node0]),
+
+              ?assertEqual({ok, Node0}, hash_ring:find_node(hoge, Ring0)),
+
+              %% weight: 1 => 0
+              %% - 仮想ノード数が0になる
+              Node1 = hash_ring_node:make(a, a, [{weight, 0}]),
+              Ring1 = hash_ring:add_nodes([Node1], Ring0),
+              ?assertEqual(error, hash_ring:find_node(hoge, Ring1)),
+              ?assertEqual([Node1], hash_ring:get_nodes(Ring1)), % ノードの登録はされている
+
+              %% weight: 0 => 1
+              Ring2 = hash_ring:add_nodes([Node0], Ring1),
+              ?assertEqual({ok, Node0}, hash_ring:find_node(hoge, Ring2))
       end}
     ].
 
