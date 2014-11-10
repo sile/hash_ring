@@ -9,14 +9,13 @@
 %%--------------------------------------------------------------------------------
 -export([
          calc_hash/2,
-         hash_byte_size/1,
-         identity/1
+         hash_byte_size/1
         ]).
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
 %%--------------------------------------------------------------------------------
--spec calc_hash(hash_ring:hash_algorithms(), hash_ring:ring_node()) -> non_neg_integer().
+-spec calc_hash(hash_ring:hash_algorithms(), term()) -> non_neg_integer().
 calc_hash(crc32, Node) ->
     erlang:crc32(term_to_binary(Node));
 calc_hash(phash2, Node) ->
@@ -30,6 +29,3 @@ hash_byte_size(phash2) -> 4;
 hash_byte_size(md5)    -> 16;
 hash_byte_size(sha)    -> 20;
 hash_byte_size(sha256) -> 32.
-
--spec identity(term()) -> term().
-identity(X) -> X.

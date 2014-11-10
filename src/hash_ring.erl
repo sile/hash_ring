@@ -53,7 +53,7 @@
         }).
 
 -opaque ring()    :: #?RING{}.
--type ring_node() :: term().
+-type ring_node() :: hash_ring_node:ring_node().
 
 -type item() :: term().
 
@@ -89,6 +89,8 @@ is_ring(#?RING{impl_module = M, impl_state = S}) -> M:is_ring(S);
 is_ring(_)                                       -> false.
 
 %% @doc ノード群を追加する
+%%
+%% キーが等しいノードが既に存在する場合は、上書きされる
 -spec add_nodes([ring_node()], ring()) -> ring().
 add_nodes(Nodes, Ring) ->
     #?RING{impl_module = Module, impl_state = State0} = Ring,
@@ -104,7 +106,7 @@ remove_nodes(Nodes, Ring) ->
 
 %% @doc ノード一覧を取得する
 %%
-%% 返り値のノードは昇順にソートされている
+%% 返り値のノードはキー順に昇順にソートされている
 -spec get_nodes(ring()) -> [ring_node()].
 get_nodes(Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
