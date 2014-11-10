@@ -7,7 +7,7 @@
 %% Exported API
 %%--------------------------------------------------------------------------------
 -export([make/1, make/2, make/3]).
--export([get_key/1, get_data/1, get_weight/1]).
+-export([get_key/1, get_data/1, get_weight/1, calc_virtual_node_count/2]).
 
 -export_type([ring_node/0]).
 -export_type([key/0, data/0, weight/0]).
@@ -29,7 +29,7 @@
 
 -type key() :: term().
 -type data() :: term().
--type weight() :: number(). % non negative
+-type weight() :: number(). % positive number
 
 -type options() :: [option()].
 -type option() :: {weight, weight()}.
@@ -55,7 +55,7 @@ make(Key, Data) ->
 -spec make(key(), data(), options()) -> ring_node().
 make(Key, Data, Options) ->
     Weight = proplists:get_value(weight, Options, 1),
-    _ = (is_number(Weight) andalso Weight >= 0) orelse error(badarg, [Key, Data, Options]),
+    _ = (is_number(Weight) andalso Weight > 0) orelse error(badarg, [Key, Data, Options]),
 
     #?NODE{
         key    = Key,
@@ -74,3 +74,8 @@ get_data(#?NODE{data = Data}) -> Data.
 %% @doc ノードの重みを取得する
 -spec get_weight(ring_node()) -> weight().
 get_weight(#?NODE{weight = Weight}) -> Weight.
+
+%% @doc 仮想ノードの数を計算する
+-spec calc_virtual_node_count(non_neg_integer(), ring_node()) -> VirtualNodeCount::non_neg_integer().
+calc_virtual_node_count(BaseVirtualNodeCount, Node) ->
+    round(BaseVirtualNodeCount * get_weight(Node)).

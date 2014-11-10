@@ -10,7 +10,7 @@
 %%----------------------------------------------------------------------------------------------------------------------
 -define(MAKE_STATIC_RING(Nodes),
         hash_ring:make(Nodes, [{module, hash_ring_static},
-                               {sentinel_node, 'SENTINEL'},
+                               {sentinel_key, 'SENTINEL'},
                                {virtual_node_count, 128}])).
 
 %%----------------------------------------------------------------------------------------------------------------------
@@ -52,7 +52,8 @@ remove_nodes_test_() ->
       fun () ->
               Nodes = list_to_nodes(lists:seq(1, 100)),
               Ring0 = ?MAKE_STATIC_RING([]),
-              Ring1 = lists:foldl(fun hash_ring:remove_nodes/2, ?MAKE_STATIC_RING(Nodes), [[N] || N <- Nodes]),
+              Ring1 = lists:foldl(fun hash_ring:remove_nodes/2, ?MAKE_STATIC_RING(Nodes),
+                                  [[hash_ring_node:get_key(N)] || N <- Nodes]),
               ?assertEqual(Ring0, Ring1)
       end}
     ].

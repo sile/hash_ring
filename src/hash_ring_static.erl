@@ -34,13 +34,12 @@
 
 -record(?RING,
         {
-          virtual_node_count  :: pos_integer(),
-          virtual_node_hashes :: tuple(),
-          virtual_nodes       :: tuple(),
-          nodes               :: [hash_ring:ring_node()],
-          node_count          :: non_neg_integer(),
-          hash_mask           :: integer(),
-          hash_algorithm      :: hash_ring:hash_algorithms()
+          virtual_node_count :: pos_integer(),
+          vnodes             :: tuple(), % array of `virtual_node()'
+          nodes              :: [hash_ring:ring_node()],
+          node_count         :: non_neg_integer(),
+          hash_mask          :: integer(),
+          hash_algorithm     :: hash_ring:hash_algorithms()
         }).
 
 -opaque ring() :: #?RING{}.
@@ -48,7 +47,9 @@
 -type option() :: {virtual_node_count, pos_integer()}
                 | {max_hash_byte_size, pos_integer()}
                 | {hash_algorithm, hash_ring:hash_algorithms()}
-                | {sentinel_node, term()}. % for unit-test
+                | {sentinel_key, hash_ring_node:key()}. % for unit-test
+
+%-type virtual_node() :: {Hash::non_neg_integer(), Sequence::pos_integer(), hash_ring:ring_node()}.
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
@@ -56,7 +57,7 @@
 %% @doc コンシステントハッシュリングを構築する
 -spec make([hash_ring:ring_node()], [option()]) -> ring().
 make(Nodes, Options) ->
-    SentinelNode     = proplists:get_value(sentinel_node, Options, make_ref()),
+    SentinelKey      = proplists:get_value(sentinel_key, Options, make_ref()),
     VirtualNodeCount = proplists:get_value(virtual_node_count, Options, ?DEFAULT_VIRTUAL_NODE_COUNT),
     HashAlgorithm    = proplists:get_value(hash_algorithm, Options, ?DEFAULT_HASH_ALGORITHM),
     MaxHashByteSize0 = proplists:get_value(max_hash_byte_size, Options, ?DEFAULT_MAX_HASH_BYTE_SIZE),
@@ -66,13 +67,12 @@ make(Nodes, Options) ->
 
     Ring =
         #?RING{
-            virtual_node_count  = VirtualNodeCount,
-            virtual_node_hashes = {HashMask + 1}, % store sentinel value
-            virtual_nodes       = {SentinelNode},
-            nodes               = [],
-            node_count          = 0,
-            hash_mask           = HashMask,
-            hash_algorithm      = HashAlgorithm
+            virtual_node_count = VirtualNodeCount,
+            vnodes             = {{HashMask + 1, 1, hash_ring_node:make(SentinelKey)}}, % store sentinel
+            nodes              = [],
+            node_count         = 0,
+            hash_mask          = HashMask,
+            hash_algorithm     = HashAlgorithm
            },
     add_nodes(Nodes, Ring).
 
@@ -84,37 +84,35 @@ is_ring(_)        -> false.
 %% @doc ノード群を追加する
 -spec add_nodes([hash_ring:ring_node()], ring()) -> ring().
 add_nodes(Nodes, Ring) ->
-    #?RING{virtual_node_count = VirtualNodeCount, virtual_node_hashes = VirtualNodeHashes0, virtual_nodes = VirtualNodes0, nodes = Nodes0} = Ring,
+    #?RING{virtual_node_count = VirtualNodeCount, vnodes = VirtualNodes0, nodes = Nodes0} = Ring,
 
-    VirtualNodes1 = [{hash({I, hash_ring_node:get_key(Node)}, Ring), Node} || I <- lists:seq(1, VirtualNodeCount), Node <- Nodes],
+    VirtualNodes1 = [{hash({I, hash_ring_node:get_key(Node)}, Ring), I, Node} || I <- lists:seq(1, VirtualNodeCount), Node <- Nodes],
     VirtualNodes2 = lists:sort(VirtualNodes1), % lists:keysort/2 だとハッシュ値に衝突がある場合に、順番が一意に定まらないので単なる sort/1 を使用する
-    VirtualNodes3 = lists:umerge(VirtualNodes2, lists:zip(tuple_to_list(VirtualNodeHashes0), tuple_to_list(VirtualNodes0))),
+    VirtualNodes3 = lists:umerge(VirtualNodes2, tuple_to_list(VirtualNodes0)),
 
     Nodes1 = lists:usort(Nodes0 ++ Nodes),
 
     Ring#?RING{
-            virtual_node_hashes = list_to_tuple([Hash || {Hash, _} <- VirtualNodes3]),
-            virtual_nodes       = list_to_tuple([Node || {_, Node} <- VirtualNodes3]),
-            nodes               = Nodes1,
-            node_count          = length(Nodes1)
+            vnodes     = list_to_tuple(VirtualNodes3),
+            nodes      = Nodes1,
+            node_count = length(Nodes1)
            }.
 
 %% @doc ノード群を削除する
--spec remove_nodes([hash_ring:ring_node()], ring()) -> ring().
-remove_nodes(Nodes, Ring) ->
-    #?RING{virtual_node_hashes = VirtualNodeHashes0, virtual_nodes = VirtualNodes0, nodes = Nodes0} = Ring,
-    NodeSet = gb_sets:from_list(Nodes),
+-spec remove_nodes([hash_ring_node:key()], ring()) -> ring().
+remove_nodes(Keys, Ring) ->
+    #?RING{vnodes = VirtualNodes0, nodes = Nodes0} = Ring,
+    KeySet = gb_sets:from_list(Keys),
 
-    VirtualNodes1 = lists:filter(fun ({_, N}) -> not gb_sets:is_member(N, NodeSet) end,
-                                 lists:zip(tuple_to_list(VirtualNodeHashes0), tuple_to_list(VirtualNodes0))),
+    VirtualNodes1 = lists:filter(fun ({_, _, N}) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end,
+                                 tuple_to_list(VirtualNodes0)),
 
-    Nodes1 = lists:filter(fun (N) -> not gb_sets:is_member(N, NodeSet) end, Nodes0),
+    Nodes1 = lists:filter(fun (N) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end, Nodes0),
 
     Ring#?RING{
-            virtual_node_hashes = list_to_tuple([Hash || {Hash, _} <- VirtualNodes1]),
-            virtual_nodes       = list_to_tuple([Node || {_, Node} <- VirtualNodes1]),
-            nodes               = Nodes1,
-            node_count          = length(Nodes1)
+            vnodes     = list_to_tuple(VirtualNodes1),
+            nodes      = Nodes1,
+            node_count = length(Nodes1)
            }.
 
 %% @doc ノード一覧を取得する
@@ -130,33 +128,33 @@ get_node_count(Ring) ->
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
 fold(Fun, Item, Initial, Ring) ->
-    #?RING{hash_mask = HashMask, node_count = NodeCount, virtual_nodes = VirtualNodes, virtual_node_hashes = VirtualNodeHashes} = Ring,
+    #?RING{hash_mask = HashMask, node_count = NodeCount, vnodes = VirtualNodes} = Ring,
     ItemHash = hash(Item, Ring),
-    PartitionSize = max(1, (HashMask + 1) div tuple_size(VirtualNodeHashes)),
-    Position = find_start_position(ItemHash, PartitionSize, VirtualNodeHashes),
+    PartitionSize = max(1, (HashMask + 1) div tuple_size(VirtualNodes)),
+    Position = find_start_position(ItemHash, PartitionSize, VirtualNodes),
     fold_successor_nodes(NodeCount, Position, VirtualNodes, Fun, Initial).
 
 %%--------------------------------------------------------------------------------
 %% Internal Functions
 %%--------------------------------------------------------------------------------
 -spec find_start_position(term(), pos_integer(), tuple()) -> non_neg_integer().
-find_start_position(ItemHash, PartitionSize, VirtualNodeHashes) ->
-    find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, 1, (ItemHash div PartitionSize) + 1, tuple_size(VirtualNodeHashes) + 1).
+find_start_position(ItemHash, PartitionSize, VirtualNodes) ->
+    find_start_position(ItemHash, PartitionSize, VirtualNodes, 1, (ItemHash div PartitionSize) + 1, tuple_size(VirtualNodes) + 1).
 
 -spec find_start_position(term(), pos_integer(), tuple(), pos_integer(), pos_integer(), pos_integer()) -> pos_integer().
-find_start_position(_ItemHash, _PartitionSize, _VirtualNodeHashes, Position, _, Position) ->
+find_start_position(_ItemHash, _PartitionSize, _VirtualNodes, Position, _, Position) ->
     Position;
-find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, Start, Current0, End) ->
-    Current  = min(max(Start, Current0), End - 1),
-    NodeHash = element(Current, VirtualNodeHashes),
+find_start_position(ItemHash, PartitionSize, VirtualNodes, Start, Current0, End) ->
+    Current = min(max(Start, Current0), End - 1),
+    {NodeHash, _, _} = element(Current, VirtualNodes),
     case NodeHash of
         ItemHash -> Current;
         _        ->
             Delta = ItemHash - NodeHash,
             Next  = Current + (Delta div PartitionSize),
             case Delta > 0 of
-                true  -> find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, Current + 1, Next + 1, End);
-                false -> find_start_position(ItemHash, PartitionSize, VirtualNodeHashes, Start, Next - 1, Current)
+                true  -> find_start_position(ItemHash, PartitionSize, VirtualNodes, Current + 1, Next + 1, End);
+                false -> find_start_position(ItemHash, PartitionSize, VirtualNodes, Start, Next - 1, Current)
             end
     end.
 
@@ -170,7 +168,7 @@ fold_successor_nodes(0, _, _, _, Acc, _) ->
 fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNodes) when Position >= tuple_size(VirtualNodes) ->
     fold_successor_nodes(RestNodeCount, 1, VirtualNodes, Fun, Acc, IteratedNodes);
 fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNodes) ->
-    Node = element(Position, VirtualNodes),
+    {_, _, Node} = element(Position, VirtualNodes),
     case gb_sets:is_member(Node, IteratedNodes) of
         true  -> fold_successor_nodes(RestNodeCount, Position + 1, VirtualNodes, Fun, Acc, IteratedNodes);
         false ->

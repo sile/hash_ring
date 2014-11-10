@@ -97,8 +97,8 @@ add_nodes(Nodes, Ring) ->
     State1 = Module:add_nodes(Nodes, State0),
     Ring#?RING{impl_state = State1}.
 
-%% @doc ノード群を削除する
--spec remove_nodes([ring_node()], ring()) -> ring().
+%% @doc キーに対応するノード群を削除する
+-spec remove_nodes([hash_ring_node:key()], ring()) -> ring().
 remove_nodes(Nodes, Ring) ->
     #?RING{impl_module = Module, impl_state = State0} = Ring,
     State1 = Module:remove_nodes(Nodes, State0),
