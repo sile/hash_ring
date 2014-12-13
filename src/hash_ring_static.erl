@@ -31,6 +31,7 @@
 -define(DEFAULT_VIRTUAL_NODE_COUNT, 1024). % 各ノードごとの仮想ノードの数
 -define(DEFAULT_MAX_HASH_BYTE_SIZE, 4).
 -define(DEFAULT_HASH_ALGORITHM, md5).
+-define(DEFAULT_WEIGHT_MODE, direct).
 
 -record(?RING,
         {
@@ -39,7 +40,8 @@
           nodes              :: [hash_ring:ring_node()],
           node_count         :: non_neg_integer(),
           hash_mask          :: integer(),
-          hash_algorithm     :: hash_ring:hash_algorithms()
+          hash_algorithm     :: hash_ring:hash_algorithms(),
+          weight_mode        :: weight_mode
         }).
 
 -opaque ring() :: #?RING{}.
@@ -47,9 +49,14 @@
 -type option() :: {virtual_node_count, pos_integer()}
                 | {max_hash_byte_size, pos_integer()}
                 | {hash_algorithm, hash_ring:hash_algorithms()}
+                | {weight_mode, weight_mode()} % default: direct
                 | {sentinel_key, hash_ring_node:key()}. % for unit-test
 
 -type virtual_node() :: {Hash::non_neg_integer(), Sequence::non_neg_integer(), hash_ring:ring_node()}.
+
+-type weight_mode() :: direct | average.
+%% - direct: 指定された重みをそのまま使う
+%% - average: 各ノードの重みを平均化する
 
 %%--------------------------------------------------------------------------------
 %% Exported Functions
@@ -60,6 +67,7 @@ make(Nodes, Options) ->
     SentinelKey      = proplists:get_value(sentinel_key, Options, make_ref()),
     VirtualNodeCount = proplists:get_value(virtual_node_count, Options, ?DEFAULT_VIRTUAL_NODE_COUNT),
     HashAlgorithm    = proplists:get_value(hash_algorithm, Options, ?DEFAULT_HASH_ALGORITHM),
+    WeightMode       = proplists:get_value(weight_mode, Options, ?DEFAULT_WEIGHT_MODE),
     MaxHashByteSize0 = proplists:get_value(max_hash_byte_size, Options, ?DEFAULT_MAX_HASH_BYTE_SIZE),
     MaxHashByteSize  = min(MaxHashByteSize0, hash_ring_util:hash_byte_size(HashAlgorithm)),
 
@@ -72,7 +80,8 @@ make(Nodes, Options) ->
             nodes              = [],
             node_count         = 0,
             hash_mask          = HashMask,
-            hash_algorithm     = HashAlgorithm
+            hash_algorithm     = HashAlgorithm,
+            weight_mode        = WeightMode
            },
     add_nodes(Nodes, Ring).
 
