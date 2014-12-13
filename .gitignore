@@ -1,6 +1,7 @@
 *~
 *.beam
 /.*/
-/doc/
+/doc/*
+!/doc/*.md
 /ebin/
 .dialyzer.plt
