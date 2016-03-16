@@ -1,14 +1,14 @@
 
 
-# Module hash_ring_static #
+# Module hash_ring_dynamic #
 * [Description](#description)
 * [Data Types](#types)
 * [Function Index](#index)
 * [Function Details](#functions)
 
-静的に構築されたコンシステントハッシュリングを操作するためのモジュール.
+動的なノード追加・削除に強いhash_ringの実装モジュール.
 
-Copyright (c) 2013-2014 Takeru Ohta <phjgt308@gmail.com>
+Copyright (c) 2013-2016 Takeru Ohta <phjgt308@gmail.com>
 
 __Behaviours:__ [`hash_ring`](hash_ring.md).
 
@@ -23,9 +23,10 @@ __Behaviours:__ [`hash_ring`](hash_ring.md).
 
 
 <pre><code>
-option() = {virtual_node_count, pos_integer()} | {max_hash_byte_size, pos_integer()} | {hash_algorithm, <a href="hash_ring.md#type-hash_algorithms">hash_ring:hash_algorithms()</a>} | {weight_mode, <a href="#type-weight_mode">weight_mode()</a>} | {sentinel_key, <a href="hash_ring_node.md#type-key">hash_ring_node:key()</a>}
+option() = {virtual_node_count, pos_integer()} | {max_hash_byte_size, pos_integer()} | {hash_algorithm, <a href="hash_ring.md#type-hash_algorithms">hash_ring:hash_algorithms()</a>} | {weight_mode, <a href="#type-weight_mode">weight_mode()</a>}
 </code></pre>
 
+default: direct
 
 
 
@@ -108,7 +109,7 @@ get_nodes(Ring::<a href="#type-ring">ring()</a>) -&gt; [<a href="hash_ring.md#ty
 ### is_ring/1 ###
 
 <pre><code>
-is_ring(Hash_ring_static::<a href="#type-ring">ring()</a> | term()) -&gt; boolean()
+is_ring(Hash_ring_dynamic::<a href="#type-ring">ring()</a> | term()) -&gt; boolean()
 </code></pre>
 <br />
 

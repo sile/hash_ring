@@ -1,28 +1,22 @@
-DIALYZER_OPTS=-Werror_handling -Wrace_conditions -Wunmatched_returns
-
-all: compile xref eunit dialyze
+all: compile xref eunit dialyze edoc
 
 compile:
-	@./rebar compile
+	@./rebar3 compile
 
 xref:
-	@./rebar xref
+	@./rebar3 xref
 
 clean:
-	@./rebar clean
+	@./rebar3 clean
 
 eunit:
-	@./rebar eunit
+	@./rebar3 do eunit,cover
 
 edoc:
-	@./rebar doc
+	@./rebar3 as edown edoc
 
 start: compile
-	erl -pa ebin
+	@./rebar3 shell
 
-.dialyzer.plt:
-	touch .dialyzer.plt
-	dialyzer --build_plt --plt .dialyzer.plt --apps erts kernel stdlib compiler crypto
-
-dialyze: .dialyzer.plt compile
-	dialyzer --plt .dialyzer.plt -r ebin $(DIALYZER_OPTS)
+dialyze: compile
+	@./rebar3 dialyzer
