@@ -35,13 +35,14 @@
 
 -record(?RING,
         {
-          virtual_node_count :: pos_integer(),
-          vnodes             :: tuple(), % array of `virtual_node()'
-          nodes              :: [hash_ring:ring_node()],
-          node_count         :: non_neg_integer(),
-          hash_mask          :: integer(),
-          hash_algorithm     :: hash_ring:hash_algorithms(),
-          weight_mode        :: weight_mode
+          virtual_node_count   :: pos_integer(),
+          vnodes               :: tuple(), % array of `virtual_node()'
+          nodes                :: [hash_ring:ring_node()],
+          node_count           :: non_neg_integer(),
+          available_node_count :: non_neg_integer(),
+          hash_mask            :: integer(),
+          hash_algorithm       :: hash_ring:hash_algorithms(),
+          weight_mode          :: weight_mode()
         }).
 
 -opaque ring() :: #?RING{}.
@@ -75,13 +76,14 @@ make(Nodes, Options) ->
 
     Ring =
         #?RING{
-            virtual_node_count = VirtualNodeCount,
-            vnodes             = {{HashMask + 1, 0, hash_ring_node:make(SentinelKey)}}, % store sentinel
-            nodes              = [],
-            node_count         = 0,
-            hash_mask          = HashMask,
-            hash_algorithm     = HashAlgorithm,
-            weight_mode        = WeightMode
+            virtual_node_count   = VirtualNodeCount,
+            vnodes               = {{HashMask + 1, 0, hash_ring_node:make(SentinelKey)}}, % store sentinel
+            nodes                = [],
+            node_count           = 0,
+            available_node_count = 0,
+            hash_mask            = HashMask,
+            hash_algorithm       = HashAlgorithm,
+            weight_mode          = WeightMode
            },
     add_nodes(Nodes, Ring).
 
@@ -106,9 +108,10 @@ add_nodes(Nodes, Ring) ->
     Nodes1 = lists:umerge(fun node_less_than_or_equal_to/2, UniqNodes, Nodes0),
 
     Ring#?RING{
-            vnodes     = list_to_tuple(VirtualNodes2),
-            nodes      = Nodes1,
-            node_count = length(Nodes1)
+            vnodes               = list_to_tuple(VirtualNodes2),
+            nodes                = Nodes1,
+            node_count           = length(Nodes1),
+            available_node_count = length(lists:filter(fun hash_ring_node:is_available/1, Nodes1))
            }.
 
 %% @doc ノード群を削除する
@@ -124,9 +127,10 @@ remove_nodes(Keys, Ring) ->
         lists:filter(fun (N) -> not gb_sets:is_member(hash_ring_node:get_key(N), KeySet) end, Nodes0),
 
     Ring#?RING{
-            vnodes     = list_to_tuple(VirtualNodes1),
-            nodes      = Nodes1,
-            node_count = length(Nodes1)
+            vnodes               = list_to_tuple(VirtualNodes1),
+            nodes                = Nodes1,
+            node_count           = length(Nodes1),
+            available_node_count = length(lists:filter(fun hash_ring_node:is_available/1, Nodes1))
            }.
 
 %% @doc ノード一覧を取得する
@@ -141,10 +145,8 @@ get_node_count(Ring) ->
 
 %% @doc アイテムの次に位置するノードから順に畳み込みを行う
 -spec fold(hash_ring:fold_fun(), hash_ring:item(), term(), ring()) -> Result::term().
-fold(_, _, Initial, #?RING{vnodes = {_}}) ->
-    Initial;
 fold(Fun, Item, Initial, Ring) ->
-    #?RING{hash_mask = HashMask, node_count = NodeCount, vnodes = VirtualNodes} = Ring,
+    #?RING{hash_mask = HashMask, available_node_count = NodeCount, vnodes = VirtualNodes} = Ring,
     ItemHash = hash(Item, Ring),
     PartitionSize = max(1, (HashMask + 1) div tuple_size(VirtualNodes)),
     Position = find_start_position(ItemHash, PartitionSize, VirtualNodes),
