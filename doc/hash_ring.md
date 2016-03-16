@@ -109,12 +109,23 @@ ring_node() = <a href="hash_ring_node.md#type-ring_node">hash_ring_node:ring_nod
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_nodes-2">add_nodes/2</a></td><td>ノード群を追加する.</td></tr><tr><td valign="top"><a href="#collect_nodes-3">collect_nodes/3</a></td><td>指定のアイテムを担当するノードを優先順位が高い順に最大<code>N</code>個集める.</td></tr><tr><td valign="top"><a href="#find_node-2">find_node/2</a></td><td>指定のアイテムを担当するノードを検索する.</td></tr><tr><td valign="top"><a href="#fold-4">fold/4</a></td><td>アイテムの次に位置するノードから順に畳み込みを行う.</td></tr><tr><td valign="top"><a href="#get_node_count-1">get_node_count/1</a></td><td>ノードの個数を取得する.</td></tr><tr><td valign="top"><a href="#get_nodes-1">get_nodes/1</a></td><td>ノード一覧を取得する.</td></tr><tr><td valign="top"><a href="#is_ring-1">is_ring/1</a></td><td>引数の値が適切に生成されたリングオブジェクトかどうかを判定する.</td></tr><tr><td valign="top"><a href="#make-1">make/1</a></td><td>Equivalent to <a href="#make-2"><tt>make(Nodes, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#make-2">make/2</a></td><td>コンシステントハッシュリングを構築する.</td></tr><tr><td valign="top"><a href="#remove_nodes-2">remove_nodes/2</a></td><td>キーに対応するノード群を削除する.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_node-2">add_node/2</a></td><td>Equivalent to <a href="#add_nodes-2"><tt>add_nodes([Node], Ring)</tt></a>.</td></tr><tr><td valign="top"><a href="#add_nodes-2">add_nodes/2</a></td><td>ノード群を追加する.</td></tr><tr><td valign="top"><a href="#collect_nodes-3">collect_nodes/3</a></td><td>指定のアイテムを担当するノードを優先順位が高い順に最大<code>N</code>個集める.</td></tr><tr><td valign="top"><a href="#find_node-2">find_node/2</a></td><td>指定のアイテムを担当するノードを検索する.</td></tr><tr><td valign="top"><a href="#fold-4">fold/4</a></td><td>アイテムの次に位置するノードから順に畳み込みを行う.</td></tr><tr><td valign="top"><a href="#get_node_count-1">get_node_count/1</a></td><td>ノードの個数を取得する.</td></tr><tr><td valign="top"><a href="#get_nodes-1">get_nodes/1</a></td><td>ノード一覧を取得する.</td></tr><tr><td valign="top"><a href="#is_ring-1">is_ring/1</a></td><td>引数の値が適切に生成されたリングオブジェクトかどうかを判定する.</td></tr><tr><td valign="top"><a href="#make-1">make/1</a></td><td>Equivalent to <a href="#make-2"><tt>make(Nodes, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#make-2">make/2</a></td><td>コンシステントハッシュリングを構築する.</td></tr><tr><td valign="top"><a href="#remove_node-2">remove_node/2</a></td><td>Equivalent to <a href="#remove_nodes-2"><tt>remove_nodes([Node], Ring)</tt></a>.</td></tr><tr><td valign="top"><a href="#remove_nodes-2">remove_nodes/2</a></td><td>キーに対応するノード群を削除する.</td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
+
+<a name="add_node-2"></a>
+
+### add_node/2 ###
+
+<pre><code>
+add_node(Node::<a href="#type-ring_node">ring_node()</a>, Ring::<a href="#type-ring">ring()</a>) -&gt; <a href="#type-ring">ring()</a>
+</code></pre>
+<br />
+
+Equivalent to [`add_nodes([Node], Ring)`](#add_nodes-2).
 
 <a name="add_nodes-2"></a>
 
@@ -220,6 +231,17 @@ make(Nodes::[<a href="#type-ring_node">ring_node()</a>], Options::[<a href="#typ
 <br />
 
 コンシステントハッシュリングを構築する
+
+<a name="remove_node-2"></a>
+
+### remove_node/2 ###
+
+<pre><code>
+remove_node(Node::<a href="hash_ring_node.md#type-key">hash_ring_node:key()</a>, Ring::<a href="#type-ring">ring()</a>) -&gt; <a href="#type-ring">ring()</a>
+</code></pre>
+<br />
+
+Equivalent to [`remove_nodes([Node], Ring)`](#remove_nodes-2).
 
 <a name="remove_nodes-2"></a>
 

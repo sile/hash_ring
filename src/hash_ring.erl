@@ -10,7 +10,9 @@
          make/1,
          make/2,
          is_ring/1,
+         add_node/2,
          add_nodes/2,
+         remove_node/2,
          remove_nodes/2,
          get_nodes/1,
          get_node_count/1,
@@ -92,6 +94,11 @@ make(Nodes, Options) ->
 is_ring(#?RING{impl_module = M, impl_state = S}) -> M:is_ring(S);
 is_ring(_)                                       -> false.
 
+%% @equiv add_nodes([Node], Ring)
+-spec add_node(ring_node(), ring()) -> ring().
+add_node(Node, Ring) ->
+    add_nodes([Node], Ring).
+
 %% @doc ノード群を追加する
 %%
 %% キーが等しいノードが既に存在する場合は、上書きされる
@@ -100,6 +107,11 @@ add_nodes(Nodes, Ring) ->
     #?RING{impl_module = Module, impl_state = State0} = Ring,
     State1 = Module:add_nodes(Nodes, State0),
     Ring#?RING{impl_state = State1}.
+
+%% @equiv remove_nodes([Node], Ring)
+-spec remove_node(hash_ring_node:key(), ring()) -> ring().
+remove_node(Node, Ring) ->
+    remove_nodes([Node], Ring).
 
 %% @doc キーに対応するノード群を削除する
 -spec remove_nodes([hash_ring_node:key()], ring()) -> ring().
