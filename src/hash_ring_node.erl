@@ -8,6 +8,7 @@
 %%--------------------------------------------------------------------------------
 -export([make/1, make/2, make/3]).
 -export([get_key/1, get_data/1, get_weight/1, calc_virtual_node_count/2]).
+-export([is_available/1]).
 
 -export_type([ring_node/0]).
 -export_type([key/0, data/0, weight/0]).
@@ -74,6 +75,10 @@ get_data(#?NODE{data = Data}) -> Data.
 %% @doc ノードの重みを取得する
 -spec get_weight(ring_node()) -> weight().
 get_weight(#?NODE{weight = Weight}) -> Weight.
+
+%% @doc 利用可能(= 重みが0ではない)かどうかを返す
+-spec is_available(ring_node()) -> boolean().
+is_available(#?NODE{weight = Weight}) -> Weight > 0.
 
 %% @doc 仮想ノードの数を計算する
 -spec calc_virtual_node_count(non_neg_integer(), ring_node()) -> VirtualNodeCount::non_neg_integer().

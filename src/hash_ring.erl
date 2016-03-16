@@ -61,9 +61,10 @@
 -type item() :: hash_ring_node:key().
 
 -type option() :: {module, hash_ring_module()}
-                | hash_ring_static:option().
+                | hash_ring_static:option()
+                | hash_ring_dynamic:option().
 
--type hash_ring_module() :: hash_ring_static.
+-type hash_ring_module() :: hash_ring_static | hash_ring_dynamic.
 
 -type impl_state() :: term().
 
