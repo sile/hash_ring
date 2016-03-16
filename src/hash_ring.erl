@@ -1,4 +1,4 @@
-%% @copyright 2013-2014 Takeru Ohta <phjgt308@gmail.com>
+%% @copyright 2013-2016 Takeru Ohta <phjgt308@gmail.com>
 %%
 %% @doc コンシステントハッシュリング操作用のインターフェースモジュール
 -module(hash_ring).
@@ -20,7 +20,7 @@
         ]).
 
 -export_type([
-              ring/0,
+              ring/0, ring/1, ring/2,
               ring_node/0,
               hash_ring_module/0,
               option/0,
@@ -52,10 +52,13 @@
           impl_state  :: impl_state()
         }).
 
--opaque ring()    :: #?RING{}.
+-type ring()              :: ring(hash_ring_node:key()).
+-type ring(Key)           :: ring(Key, Key).
+-opaque ring(_Key, _Data) :: #?RING{}.
+
 -type ring_node() :: hash_ring_node:ring_node().
 
--type item() :: term().
+-type item() :: hash_ring_node:key().
 
 -type option() :: {module, hash_ring_module()}
                 | hash_ring_static:option().
