@@ -1,24 +1,24 @@
-%% @copyright 2013-2014 Takeru Ohta <phjgt308@gmail.com>
+%% @copyright 2013-2016 Takeru Ohta <phjgt308@gmail.com>
 %%
-%% @doc コンシステントハッシュリング上のノードを表現するオブジェクト
+%% @doc An object which represents a node on a consistent hash ring
+%% @end
 -module(hash_ring_node).
 
-%%--------------------------------------------------------------------------------
+%%----------------------------------------------------------------------------------------------------------------------
 %% Exported API
-%%--------------------------------------------------------------------------------
+%%----------------------------------------------------------------------------------------------------------------------
 -export([make/1, make/2, make/3]).
--export([get_key/1, get_data/1, get_weight/1, calc_virtual_node_count/2]).
--export([is_available/1]).
+-export([is_node/1]).
+-export([get_key/1, get_data/1, get_weight/1]).
 
 -export_type([ring_node/0]).
 -export_type([key/0, data/0, weight/0]).
 -export_type([option/0, options/0]).
 
-%%--------------------------------------------------------------------------------
+%%----------------------------------------------------------------------------------------------------------------------
 %% Macros & Records & Types
-%%--------------------------------------------------------------------------------
+%%----------------------------------------------------------------------------------------------------------------------
 -define(NODE, ?MODULE).
-
 -record(?NODE,
         {
           key    :: key(),
@@ -27,21 +27,33 @@
         }).
 
 -opaque ring_node() :: #?NODE{}.
+%% A node on a ring.
 
 -type key() :: term().
+%% The key of a `ring_node()'.
+%%
+%% It is used to decide location of the node on a ring.
+
 -type data() :: term().
--type weight() :: number(). % non negative number
+%% The data of a `ring_node()'.
+%%
+%% It holds arbitrary user data.
+
+-type weight() :: number().
+%% The non negative weight of a `ring_node()'.
+%%
+%% The more weight node occupies, the more space in a ring.
 
 -type options() :: [option()].
 -type option() :: {weight, weight()}.
-%% weight: <br />
-%%  - 仮想ノードの個数を決定する際の重み <br />
-%%  - 値が大きいほど仮想ノードの個数が多くなり、より選択されやすくなる <br />
-%%  - デフォルト値: `1.0' <br />
+%% weight:
+%% - A coefficient which is used to determine the virtual node count of the node.
+%% - The higher the value, the number of virtual nodes increases, likely to be more selected.
+%% - The default value is `1'.
 
-%%--------------------------------------------------------------------------------
+%%----------------------------------------------------------------------------------------------------------------------
 %% Exported Functions
-%%--------------------------------------------------------------------------------
+%%----------------------------------------------------------------------------------------------------------------------
 %% @equiv make(Key, Key)
 -spec make(key()) -> ring_node().
 make(Key) ->
@@ -52,7 +64,7 @@ make(Key) ->
 make(Key, Data) ->
     make(Key, Data, []).
 
-%% @doc `ring_node()'のインスタンスを生成する
+%% @doc Creates a new `ring_node()' object
 -spec make(key(), data(), options()) -> ring_node().
 make(Key, Data, Options) ->
     Weight = proplists:get_value(weight, Options, 1),
@@ -64,23 +76,18 @@ make(Key, Data, Options) ->
         weight = Weight
        }.
 
-%% @doc ノードのキーを取得する
--spec get_key(ring_node()) -> key().
+%% @doc Returns `true' if `X' is a `ring_node()', otherwise `false'
+-spec is_node(X :: (ring_node() | term())) -> boolean().
+is_node(X) -> is_record(X, ?NODE).
+
+%% @doc Gets the key of `Node'
+-spec get_key(Node :: ring_node()) -> key().
 get_key(#?NODE{key = Key}) -> Key.
 
-%% @doc ノードのデータを取得する
--spec get_data(ring_node()) -> data().
+%% @doc Gets the data of `Node'
+-spec get_data(Node :: ring_node()) -> data().
 get_data(#?NODE{data = Data}) -> Data.
 
-%% @doc ノードの重みを取得する
--spec get_weight(ring_node()) -> weight().
+%% @doc Gets the weight of `Node'
+-spec get_weight(Node :: ring_node()) -> weight().
 get_weight(#?NODE{weight = Weight}) -> Weight.
-
-%% @doc 利用可能(= 重みが0ではない)かどうかを返す
--spec is_available(ring_node()) -> boolean().
-is_available(#?NODE{weight = Weight}) -> Weight > 0.
-
-%% @doc 仮想ノードの数を計算する
--spec calc_virtual_node_count(non_neg_integer(), ring_node()) -> VirtualNodeCount::non_neg_integer().
-calc_virtual_node_count(BaseVirtualNodeCount, Node) ->
-    round(BaseVirtualNodeCount * get_weight(Node)).

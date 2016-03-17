@@ -20,6 +20,7 @@
          find_node/2,
          collect_nodes/3
         ]).
+%% TODO: list_to_nodes(key() | {key(), data()} | {key(), data(), options()}
 
 -export_type([
               ring/0, ring/1, ring/2,

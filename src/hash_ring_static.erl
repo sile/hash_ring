@@ -111,7 +111,7 @@ add_nodes(Nodes, Ring) ->
             vnodes               = list_to_tuple(VirtualNodes2),
             nodes                = Nodes1,
             node_count           = length(Nodes1),
-            available_node_count = length(lists:filter(fun hash_ring_node:is_available/1, Nodes1))
+            available_node_count = length(lists:filter(fun hash_ring_util:is_available_node/1, Nodes1))
            }.
 
 %% @doc ノード群を削除する
@@ -130,7 +130,7 @@ remove_nodes(Keys, Ring) ->
             vnodes               = list_to_tuple(VirtualNodes1),
             nodes                = Nodes1,
             node_count           = length(Nodes1),
-            available_node_count = length(lists:filter(fun hash_ring_node:is_available/1, Nodes1))
+            available_node_count = length(lists:filter(fun hash_ring_util:is_available_node/1, Nodes1))
            }.
 
 %% @doc ノード一覧を取得する
@@ -199,11 +199,11 @@ fold_successor_nodes(RestNodeCount, Position, VirtualNodes, Fun, Acc, IteratedNo
 -spec add_node(hash_ring:ring_node(), [virtual_node()], ring()) -> [virtual_node()].
 add_node(Node, VirtualNodes, Ring) ->
     #?RING{nodes = ExistingNodes, virtual_node_count = BaseCount} = Ring,
-    VirtualNodeCount = hash_ring_node:calc_virtual_node_count(BaseCount, Node),
+    VirtualNodeCount = hash_ring_util:calc_virtual_node_count(BaseCount, Node),
     case node_find(hash_ring_node:get_key(Node), ExistingNodes) of
         error     -> add_virtual_nodes(Node, VirtualNodes, 0, VirtualNodeCount, Ring);
         {ok, Old} ->
-            OldCount = hash_ring_node:calc_virtual_node_count(BaseCount, Old),
+            OldCount = hash_ring_util:calc_virtual_node_count(BaseCount, Old),
             case OldCount =< VirtualNodeCount of
                 true  -> add_virtual_nodes(Node, VirtualNodes, OldCount, VirtualNodeCount, Ring);
                 false -> remove_virtual_nodes(Node, VirtualNodes, VirtualNodeCount)

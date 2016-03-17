@@ -6,9 +6,9 @@
 * [Function Index](#index)
 * [Function Details](#functions)
 
-コンシステントハッシュリング上のノードを表現するオブジェクト.
+An object which represents a node on a consistent hash ring.
 
-Copyright (c) 2013-2014 Takeru Ohta <phjgt308@gmail.com>
+Copyright (c) 2013-2016 Takeru Ohta <phjgt308@gmail.com>
 
 <a name="types"></a>
 
@@ -24,6 +24,9 @@ Copyright (c) 2013-2014 Takeru Ohta <phjgt308@gmail.com>
 data() = term()
 </code></pre>
 
+ The data of a `ring_node()`.
+
+It holds arbitrary user data.
 
 
 
@@ -34,6 +37,9 @@ data() = term()
 key() = term()
 </code></pre>
 
+ The key of a `ring_node()`.
+
+It is used to decide location of the node on a ring.
 
 
 
@@ -44,10 +50,10 @@ key() = term()
 option() = {weight, <a href="#type-weight">weight()</a>}
 </code></pre>
 
- weight: <br />
-- 仮想ノードの個数を決定する際の重み <br />
-- 値が大きいほど仮想ノードの個数が多くなり、より選択されやすくなる <br />
-- デフォルト値: `1.0` <br />
+ weight:
+- A coefficient which is used to determine the virtual node count of the node.
+- The higher the value, the number of virtual nodes increases, likely to be more selected.
+- The default value is `1`.
 
 
 
@@ -66,6 +72,7 @@ options() = [<a href="#type-option">option()</a>]
 
 __abstract datatype__: `ring_node()`
 
+ A node on a ring.
 
 
 
@@ -76,74 +83,65 @@ __abstract datatype__: `ring_node()`
 weight() = number()
 </code></pre>
 
-non negative number
+ The non negative weight of a `ring_node()`.
+
+The more weight node occupies, the more space in a ring.
 
 <a name="index"></a>
 
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#calc_virtual_node_count-2">calc_virtual_node_count/2</a></td><td>仮想ノードの数を計算する.</td></tr><tr><td valign="top"><a href="#get_data-1">get_data/1</a></td><td>ノードのデータを取得する.</td></tr><tr><td valign="top"><a href="#get_key-1">get_key/1</a></td><td>ノードのキーを取得する.</td></tr><tr><td valign="top"><a href="#get_weight-1">get_weight/1</a></td><td>ノードの重みを取得する.</td></tr><tr><td valign="top"><a href="#is_available-1">is_available/1</a></td><td>利用可能(= 重みが0ではない)かどうかを返す.</td></tr><tr><td valign="top"><a href="#make-1">make/1</a></td><td>Equivalent to <a href="#make-2"><tt>make(Key, Key)</tt></a>.</td></tr><tr><td valign="top"><a href="#make-2">make/2</a></td><td>Equivalent to <a href="#make-3"><tt>make(Key, Data, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#make-3">make/3</a></td><td><code>ring_node()</code>のインスタンスを生成する.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#get_data-1">get_data/1</a></td><td>Gets the data of <code>Node</code></td></tr><tr><td valign="top"><a href="#get_key-1">get_key/1</a></td><td>Gets the key of <code>Node</code></td></tr><tr><td valign="top"><a href="#get_weight-1">get_weight/1</a></td><td>Gets the weight of <code>Node</code></td></tr><tr><td valign="top"><a href="#is_node-1">is_node/1</a></td><td>Returns <code>true</code> if <code>X</code> is a <code>ring_node()</code>, otherwise <code>false</code></td></tr><tr><td valign="top"><a href="#make-1">make/1</a></td><td>Equivalent to <a href="#make-2"><tt>make(Key, Key)</tt></a>.</td></tr><tr><td valign="top"><a href="#make-2">make/2</a></td><td>Equivalent to <a href="#make-3"><tt>make(Key, Data, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#make-3">make/3</a></td><td>Creates a new <code>ring_node()</code> object.</td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
 
-<a name="calc_virtual_node_count-2"></a>
-
-### calc_virtual_node_count/2 ###
-
-<pre><code>
-calc_virtual_node_count(BaseVirtualNodeCount::non_neg_integer(), Node::<a href="#type-ring_node">ring_node()</a>) -&gt; VirtualNodeCount::non_neg_integer()
-</code></pre>
-<br />
-
-仮想ノードの数を計算する
-
 <a name="get_data-1"></a>
 
 ### get_data/1 ###
 
 <pre><code>
-get_data(Hash_ring_node::<a href="#type-ring_node">ring_node()</a>) -&gt; <a href="#type-data">data()</a>
+get_data(Node::<a href="#type-ring_node">ring_node()</a>) -&gt; <a href="#type-data">data()</a>
 </code></pre>
 <br />
 
-ノードのデータを取得する
+Gets the data of `Node`
 
 <a name="get_key-1"></a>
 
 ### get_key/1 ###
 
 <pre><code>
-get_key(Hash_ring_node::<a href="#type-ring_node">ring_node()</a>) -&gt; <a href="#type-key">key()</a>
+get_key(Node::<a href="#type-ring_node">ring_node()</a>) -&gt; <a href="#type-key">key()</a>
 </code></pre>
 <br />
 
-ノードのキーを取得する
+Gets the key of `Node`
 
 <a name="get_weight-1"></a>
 
 ### get_weight/1 ###
 
 <pre><code>
-get_weight(Hash_ring_node::<a href="#type-ring_node">ring_node()</a>) -&gt; <a href="#type-weight">weight()</a>
+get_weight(Node::<a href="#type-ring_node">ring_node()</a>) -&gt; <a href="#type-weight">weight()</a>
 </code></pre>
 <br />
 
-ノードの重みを取得する
+Gets the weight of `Node`
 
-<a name="is_available-1"></a>
+<a name="is_node-1"></a>
 
-### is_available/1 ###
+### is_node/1 ###
 
 <pre><code>
-is_available(Hash_ring_node::<a href="#type-ring_node">ring_node()</a>) -&gt; boolean()
+is_node(X::<a href="#type-ring_node">ring_node()</a> | term()) -&gt; boolean()
 </code></pre>
 <br />
 
-利用可能(= 重みが0ではない)かどうかを返す
+Returns `true` if `X` is a `ring_node()`, otherwise `false`
 
 <a name="make-1"></a>
 
@@ -176,5 +174,5 @@ make(Key::<a href="#type-key">key()</a>, Data::<a href="#type-data">data()</a>, 
 </code></pre>
 <br />
 
-`ring_node()`のインスタンスを生成する
+Creates a new `ring_node()` object
 
