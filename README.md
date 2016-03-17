@@ -32,6 +32,7 @@ API
 
 [EDoc](doc/README.md)を参照
 
-参考URLメモ
+References
 ----------
-- http://thor.cs.ucsb.edu/~ravenben/papers/coreos/kll+97.pdf
+
+- [Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web](https://www.akamai.com/us/en/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf)
