@@ -21,7 +21,7 @@ make_test_() ->
       fun () ->
               Ring = ?MAKE_STATIC_RING(list_to_nodes([])),
               ?assert(hash_ring:is_ring(Ring)),
-              ?assertEqual([], hash_ring:get_nodes(Ring)),
+              ?assertEqual([], hash_ring:get_node_list(Ring)),
               ?assertEqual(0, hash_ring:get_node_count(Ring))
       end},
      {"Creates a non-empty ring",
@@ -29,7 +29,7 @@ make_test_() ->
               Nodes = list_to_nodes([a, b, c]),
               Ring = ?MAKE_STATIC_RING(Nodes),
               ?assert(hash_ring:is_ring(Ring)),
-              ?assertEqual(Nodes, hash_ring:get_nodes(Ring)),
+              ?assertEqual(Nodes, hash_ring:get_node_list(Ring)),
               ?assertEqual(3, hash_ring:get_node_count(Ring))
       end}
     ].
@@ -55,7 +55,7 @@ add_nodes_test_() ->
               Node1 = hash_ring_node:make(a, a, [{weight, 0}]),
               Ring1 = hash_ring:add_nodes([Node1], Ring0),
               ?assertEqual(error, hash_ring:find_node(hoge, Ring1)),
-              ?assertEqual([Node1], hash_ring:get_nodes(Ring1)), % ノードの登録はされている
+              ?assertEqual([Node1], hash_ring:get_node_list(Ring1)), % ノードの登録はされている
 
               %% weight: 0 => 1
               Ring2 = hash_ring:add_nodes([Node0], Ring1),

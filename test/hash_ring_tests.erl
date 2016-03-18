@@ -24,7 +24,7 @@ add_test_() ->
               Ring1_A = hash_ring:add_nodes(Nodes, Ring0),
               Ring1_B = lists:foldl(fun hash_ring:add_node/2, Ring0, Nodes),
               ?assertEqual(Ring1_A, Ring1_B),
-              ?assertEqual(lists:sort(Nodes), lists:sort(hash_ring:get_nodes(Ring1_A)))
+              ?assertEqual(lists:sort(Nodes), lists:sort(hash_ring:get_node_list(Ring1_A)))
       end}
     ].
 
@@ -39,7 +39,7 @@ remove_test_() ->
               Ring1_A = hash_ring:remove_nodes(Keys, Ring0),
               Ring1_B = lists:foldl(fun hash_ring:remove_node/2, Ring0, Keys),
               ?assertEqual(Ring1_A, Ring1_B),
-              ?assertEqual([], hash_ring:get_nodes(Ring1_A))
+              ?assertEqual([], hash_ring:get_node_list(Ring1_A))
       end}
     ].
 

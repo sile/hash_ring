@@ -40,4 +40,4 @@ References
 TODO
 ----
 
-- benchmark (static|dyamic, add|remove|fold, hipe)
+- benchmark (static|dyamic, create|add|remove|fold, hipe, memory)

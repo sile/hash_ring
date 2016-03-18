@@ -14,6 +14,7 @@
 -export([remove_node/2]).
 -export([remove_nodes/2]).
 -export([get_nodes/1]).
+-export([get_node_list/1]).
 -export([get_node_count/1]).
 -export([fold/4]).
 -export([find_node/2]).
@@ -24,19 +25,18 @@
 -export_type([ring_node/0]).
 -export_type([item/0]).
 -export_type([hash_ring_module/0]).
--export_type([option/0, options/0]).
--export_type([hash_algorithms/0]).
+-export_type([options/0, option/0]).
+-export_type([hash_algorithm/0]).
 -export_type([fold_fun/0]).
+-export_type([node_map/0]).
 
 %%----------------------------------------------------------------------------------------------------------------------
 %% Behaviour Callbacks
 %%----------------------------------------------------------------------------------------------------------------------
 -callback make([ring_node()], options()) -> impl_state().
--callback is_ring(impl_state() | term()) -> boolean().
 -callback add_nodes([ring_node()], impl_state()) -> impl_state().
 -callback remove_nodes([ring_node()], impl_state()) -> impl_state().
--callback get_nodes(impl_state()) -> [ring_node()].
--callback get_node_count(impl_state()) -> non_neg_integer().
+-callback get_nodes(impl_state()) -> node_map().
 -callback fold(fold_fun(), item(), AccIn::term(), impl_state()) -> AccOut::term().
 
 %%----------------------------------------------------------------------------------------------------------------------
@@ -62,6 +62,9 @@
 %% A node on a ring
 
 -type item() :: hash_ring_node:key().
+%% An item.
+%%
+%% All items have a virtual address (location) on a ring.
 
 -type hash_ring_module() :: hash_ring_static | hash_ring_dynamic.
 %% A `hash_ring' behaviour implementing module
@@ -71,15 +74,19 @@
 
 -type options() :: [option()].
 -type option() :: {module, hash_ring_module()}
-                | hash_ring_static:option()
-                | hash_ring_dynamic:option().
+                | {virtual_node_count, pos_integer()}
+                | {max_hash_byte_size, pos_integer()}
+                | {hash_algorithm, hash_algorithm()}
+                | hash_ring_static:option().
 %% module:
 %% - The `hash_ring' implementation module which will be used to create and manipulate a hash ring instance.
 %% - The default value is `hash_ring_static'.
 %%
+%% TODO: (virtual_node_count * weight is real ...)
+%%
 %% Others are implementation specific options.
 
--type hash_algorithms() :: crc32 | phash2 | md5 | sha | sha256.
+-type hash_algorithm() :: crc32 | phash2 | md5 | sha | sha256.
 %% The hash algorithm which is used to determine locations of nodes and items on a ring
 
 -type fold_fun() :: fun ((ring_node(), Acc::term()) -> {Continue::boolean(), AccNext::term()}).
@@ -89,6 +96,9 @@
 %%
 %% If `Continue' is `true' and there are untraversed nodes,
 %% a next node will be folded, otherwise the folding will break.
+
+-type node_map() :: #{hash_ring_node:key() => ring_node()}.
+%% The map representation of nodes
 
 %%----------------------------------------------------------------------------------------------------------------------
 %% Exported Functions
@@ -102,7 +112,7 @@ make(Nodes) ->
 %%
 %% ```
 %% > R = hash_ring:make(hash_ring:list_to_nodes([a, b, c, d, e])).
-%% > hash_ring:get_nodes(R).
+%% > hash_ring:get_node_list(R).
 %% [{hash_ring_node,a,a,1},
 %%  {hash_ring_node,b,b,1},
 %%  {hash_ring_node,c,c,1},
@@ -117,8 +127,7 @@ make(Nodes, Options) ->
 
 %% @doc Returns `true' if `X' is a `ring()', otherwise `false'
 -spec is_ring(X :: (ring() | term())) -> boolean().
-is_ring(#?RING{impl_module = M, impl_state = S}) -> M:is_ring(S);
-is_ring(_)                                       -> false.
+is_ring(X) -> is_record(X, ?RING).
 
 %% @equiv add_nodes([Node], Ring)
 -spec add_node(ring_node(), ring()) -> ring().
@@ -132,7 +141,7 @@ add_node(Node, Ring) ->
 %% ```
 %% > R0 = hash_ring:make([]).
 %% > R1 = hash_ring:add_nodes([hash_ring_node:make(a)], R0).
-%% > hash_ring:get_nodes(R1).
+%% > hash_ring:get_node_list(R1).
 %% [{hash_ring_node,a,a,1}]
 %% '''
 -spec add_nodes([ring_node()], ring()) -> ring().
@@ -151,7 +160,7 @@ remove_node(Node, Ring) ->
 %% ```
 %% > R0 = hash_ring:make(hash_ring:list_to_nodes([a, b])).
 %% > R1 = hash_ring:remove_nodes([b], R0).
-%% > hash_ring:get_nodes(R1).
+%% > hash_ring:get_node_list(R1).
 %% [{hash_ring_node,a,a,1}]
 %% '''
 -spec remove_nodes([hash_ring_node:key()], ring()) -> ring().
@@ -160,8 +169,15 @@ remove_nodes(Keys, Ring) ->
     State1 = Module:remove_nodes(Keys, State0),
     Ring#?RING{impl_state = State1}.
 
-%% @doc Returns the nodes in `Ring' as a list
--spec get_nodes(ring()) -> [ring_node()].
+%% @doc Returns the nodes in `Ring' as a newly created list
+-spec get_node_list(ring()) -> [ring_node()].
+get_node_list(Ring) ->
+    maps:values(get_nodes(Ring)).
+
+%% @doc Returns the nodes in `Ring' as a map
+%%
+%% Unlike {@link get_nodes/1}, this function requires no memory allocation for the return value.
+-spec get_nodes(ring()) -> node_map().
 get_nodes(Ring) ->
     #?RING{impl_module = Module, impl_state = State} = Ring,
     Module:get_nodes(State).
@@ -169,8 +185,7 @@ get_nodes(Ring) ->
 %% @doc Returns the number of nodes in `Ring'
 -spec get_node_count(ring()) -> non_neg_integer().
 get_node_count(Ring) ->
-    #?RING{impl_module = Module, impl_state = State} = Ring,
-    Module:get_node_count(State).
+    maps:size(get_nodes(Ring)).
 
 %% @doc Folds `Fun' over every node in `Ring' returning the final value of the accumulator
 %%

@@ -10,7 +10,7 @@ Consistent Hash Rings.
 
 Copyright (c) 2013-2016 Takeru Ohta <phjgt308@gmail.com>
 
-__This module defines the `hash_ring` behaviour.__<br /> Required callback functions: `make/2`, `is_ring/1`, `add_nodes/2`, `remove_nodes/2`, `get_nodes/1`, `get_node_count/1`, `fold/4`.
+__This module defines the `hash_ring` behaviour.__<br /> Required callback functions: `make/2`, `add_nodes/2`, `remove_nodes/2`, `get_nodes/1`, `fold/4`.
 
 <a name="types"></a>
 
@@ -35,11 +35,11 @@ a next node will be folded, otherwise the folding will break.
 
 
 
-### <a name="type-hash_algorithms">hash_algorithms()</a> ###
+### <a name="type-hash_algorithm">hash_algorithm()</a> ###
 
 
 <pre><code>
-hash_algorithms() = crc32 | phash2 | md5 | sha | sha256
+hash_algorithm() = crc32 | phash2 | md5 | sha | sha256
 </code></pre>
 
  The hash algorithm which is used to determine locations of nodes and items on a ring
@@ -64,6 +64,20 @@ hash_ring_module() = hash_ring_static | hash_ring_dynamic
 item() = <a href="hash_ring_node.md#type-key">hash_ring_node:key()</a>
 </code></pre>
 
+ An item.
+
+All items have a virtual address (location) on a ring.
+
+
+
+### <a name="type-node_map">node_map()</a> ###
+
+
+<pre><code>
+node_map() = #{<a href="hash_ring_node.md#type-key">hash_ring_node:key()</a> =&gt; <a href="#type-ring_node">ring_node()</a>}
+</code></pre>
+
+ The map representation of nodes
 
 
 
@@ -71,14 +85,12 @@ item() = <a href="hash_ring_node.md#type-key">hash_ring_node:key()</a>
 
 
 <pre><code>
-option() = {module, <a href="#type-hash_ring_module">hash_ring_module()</a>} | <a href="hash_ring_static.md#type-option">hash_ring_static:option()</a> | <a href="hash_ring_dynamic.md#type-option">hash_ring_dynamic:option()</a>
+option() = {module, <a href="#type-hash_ring_module">hash_ring_module()</a>} | {virtual_node_count, pos_integer()} | {max_hash_byte_size, pos_integer()} | {hash_algorithm, <a href="#type-hash_algorithm">hash_algorithm()</a>} | <a href="hash_ring_static.md#type-option">hash_ring_static:option()</a>
 </code></pre>
 
  module:
 - The `hash_ring` implementation module which will be used to create and manipulate a hash ring instance.
 - The default value is `hash_ring_static`.
-
-Others are implementation specific options.
 
 
 
@@ -137,7 +149,7 @@ ring_node() = <a href="hash_ring_node.md#type-ring_node">hash_ring_node:ring_nod
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_node-2">add_node/2</a></td><td>Equivalent to <a href="#add_nodes-2"><tt>add_nodes([Node], Ring)</tt></a>.</td></tr><tr><td valign="top"><a href="#add_nodes-2">add_nodes/2</a></td><td>Adds <code>Nodes</code> to <code>Ring</code></td></tr><tr><td valign="top"><a href="#collect_nodes-3">collect_nodes/3</a></td><td>Collects the <code>N</code> nodes which are logically adjacent to <code>Item</code> on <code>Ring</code></td></tr><tr><td valign="top"><a href="#find_node-2">find_node/2</a></td><td>Finds a node which is logically adjacent to <code>Item</code> on <code>Ring</code></td></tr><tr><td valign="top"><a href="#fold-4">fold/4</a></td><td>Folds <code>Fun</code> over every node in <code>Ring</code> returning the final value of the accumulator.</td></tr><tr><td valign="top"><a href="#get_node_count-1">get_node_count/1</a></td><td>Returns the number of nodes in <code>Ring</code></td></tr><tr><td valign="top"><a href="#get_nodes-1">get_nodes/1</a></td><td>Returns the nodes in <code>Ring</code> as a list.</td></tr><tr><td valign="top"><a href="#is_ring-1">is_ring/1</a></td><td>Returns <code>true</code> if <code>X</code> is a <code>ring()</code>, otherwise <code>false</code></td></tr><tr><td valign="top"><a href="#list_to_nodes-1">list_to_nodes/1</a></td><td>Creates a list of <code>ring_node()` from a list of `X</code></td></tr><tr><td valign="top"><a href="#make-1">make/1</a></td><td>Equivalent to <a href="#make-2"><tt>make(Nodes, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#make-2">make/2</a></td><td>Creates a new consistent hash ring instance.</td></tr><tr><td valign="top"><a href="#remove_node-2">remove_node/2</a></td><td>Equivalent to <a href="#remove_nodes-2"><tt>remove_nodes([Node], Ring)</tt></a>.</td></tr><tr><td valign="top"><a href="#remove_nodes-2">remove_nodes/2</a></td><td>Removes nodes which have a key included in <code>Keys</code> from <code>Ring</code></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_node-2">add_node/2</a></td><td>Equivalent to <a href="#add_nodes-2"><tt>add_nodes([Node], Ring)</tt></a>.</td></tr><tr><td valign="top"><a href="#add_nodes-2">add_nodes/2</a></td><td>Adds <code>Nodes</code> to <code>Ring</code></td></tr><tr><td valign="top"><a href="#collect_nodes-3">collect_nodes/3</a></td><td>Collects the <code>N</code> nodes which are logically adjacent to <code>Item</code> on <code>Ring</code></td></tr><tr><td valign="top"><a href="#find_node-2">find_node/2</a></td><td>Finds a node which is logically adjacent to <code>Item</code> on <code>Ring</code></td></tr><tr><td valign="top"><a href="#fold-4">fold/4</a></td><td>Folds <code>Fun</code> over every node in <code>Ring</code> returning the final value of the accumulator.</td></tr><tr><td valign="top"><a href="#get_node_count-1">get_node_count/1</a></td><td>Returns the number of nodes in <code>Ring</code></td></tr><tr><td valign="top"><a href="#get_node_list-1">get_node_list/1</a></td><td>Returns the nodes in <code>Ring</code> as a newly created list.</td></tr><tr><td valign="top"><a href="#get_nodes-1">get_nodes/1</a></td><td>Returns the nodes in <code>Ring</code> as a map.</td></tr><tr><td valign="top"><a href="#is_ring-1">is_ring/1</a></td><td>Returns <code>true</code> if <code>X</code> is a <code>ring()</code>, otherwise <code>false</code></td></tr><tr><td valign="top"><a href="#list_to_nodes-1">list_to_nodes/1</a></td><td>Creates a list of <code>ring_node()` from a list of `X</code></td></tr><tr><td valign="top"><a href="#make-1">make/1</a></td><td>Equivalent to <a href="#make-2"><tt>make(Nodes, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#make-2">make/2</a></td><td>Creates a new consistent hash ring instance.</td></tr><tr><td valign="top"><a href="#remove_node-2">remove_node/2</a></td><td>Equivalent to <a href="#remove_nodes-2"><tt>remove_nodes([Node], Ring)</tt></a>.</td></tr><tr><td valign="top"><a href="#remove_nodes-2">remove_nodes/2</a></td><td>Removes nodes which have a key included in <code>Keys</code> from <code>Ring</code></td></tr></table>
 
 
 <a name="functions"></a>
@@ -171,7 +183,7 @@ Existing nodes which have the same key will be overwritten.
 ```
   > R0 = hash_ring:make([]).
   > R1 = hash_ring:add_nodes([hash_ring_node:make(a)], R0).
-  > hash_ring:get_nodes(R1).
+  > hash_ring:get_node_list(R1).
   [{hash_ring_node,a,a,1}]
 ```
 
@@ -273,16 +285,29 @@ get_node_count(Ring::<a href="#type-ring">ring()</a>) -&gt; non_neg_integer()
 
 Returns the number of nodes in `Ring`
 
+<a name="get_node_list-1"></a>
+
+### get_node_list/1 ###
+
+<pre><code>
+get_node_list(Ring::<a href="#type-ring">ring()</a>) -&gt; [<a href="#type-ring_node">ring_node()</a>]
+</code></pre>
+<br />
+
+Returns the nodes in `Ring` as a newly created list
+
 <a name="get_nodes-1"></a>
 
 ### get_nodes/1 ###
 
 <pre><code>
-get_nodes(Ring::<a href="#type-ring">ring()</a>) -&gt; [<a href="#type-ring_node">ring_node()</a>]
+get_nodes(Ring::<a href="#type-ring">ring()</a>) -&gt; <a href="#type-node_map">node_map()</a>
 </code></pre>
 <br />
 
-Returns the nodes in `Ring` as a list
+Returns the nodes in `Ring` as a map
+
+Unlike [`get_nodes/1`](#get_nodes-1), this function requires no memory allocation for the return value.
 
 <a name="is_ring-1"></a>
 
@@ -337,7 +362,7 @@ Creates a new consistent hash ring instance
 
 ```
   > R = hash_ring:make(hash_ring:list_to_nodes([a, b, c, d, e])).
-  > hash_ring:get_nodes(R).
+  > hash_ring:get_node_list(R).
   [{hash_ring_node,a,a,1},
    {hash_ring_node,b,b,1},
    {hash_ring_node,c,c,1},
@@ -370,7 +395,7 @@ Removes nodes which have a key included in `Keys` from `Ring`
 ```
   > R0 = hash_ring:make(hash_ring:list_to_nodes([a, b])).
   > R1 = hash_ring:remove_nodes([b], R0).
-  > hash_ring:get_nodes(R1).
+  > hash_ring:get_node_list(R1).
   [{hash_ring_node,a,a,1}]
 ```
 
