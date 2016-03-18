@@ -42,3 +42,13 @@ remove_test_() ->
               ?assertEqual([], hash_ring:get_nodes(Ring1_A))
       end}
     ].
+
+list_to_nodes_test_() ->
+    [
+     {"Creates a list of node",
+      fun () ->
+              Nodes0 = hash_ring:list_to_nodes([a, {b, 1}, {c, 2, [{weight, 0.2}]}]),
+              Nodes1 = [hash_ring_node:make(a), hash_ring_node:make(b, 1), hash_ring_node:make(c, 2, [{weight, 0.2}])],
+              ?assertEqual(Nodes0, Nodes1)
+      end}
+    ].
