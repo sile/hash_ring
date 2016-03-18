@@ -7,11 +7,6 @@
 -behaviour(hash_ring).
 
 %%----------------------------------------------------------------------------------------------------------------------
-%% Exported API
-%%----------------------------------------------------------------------------------------------------------------------
--export_type([option/0]).
-
-%%----------------------------------------------------------------------------------------------------------------------
 %% 'hash_ring' Callback API
 %%----------------------------------------------------------------------------------------------------------------------
 -export([make/2, add_nodes/2, remove_nodes/2, get_nodes/1, fold/4]).
@@ -19,14 +14,14 @@
 %%----------------------------------------------------------------------------------------------------------------------
 %% Macros & Recors & Types
 %%----------------------------------------------------------------------------------------------------------------------
+-define(SENTINEL_NODE, hash_ring_node:make('SENTINEL')).
+
 -define(RING, ?MODULE).
 -record(?RING,
         {
           vnodes :: tuple(), % array of `virtual_node()'
           base   :: hash_ring_base:state()
         }).
-
--type option() :: {sentinel_key, hash_ring_node:key()}. % for unit test
 
 -type virtual_node() :: {Hash::non_neg_integer(), Sequence::non_neg_integer(), hash_ring:ring_node()}.
 
@@ -35,12 +30,11 @@
 %%----------------------------------------------------------------------------------------------------------------------
 %% @private
 make(Nodes, Options) ->
-    SentinelKey = proplists:get_value(sentinel_key, Options, make_ref()),
     Base = hash_ring_base:make(Options),
     HashMask = hash_ring_base:get_hash_mask(Base),
     Ring =
         #?RING{
-            vnodes = {{HashMask + 1, 0, hash_ring_node:make(SentinelKey)}}, % store sentinel
+            vnodes = {{HashMask + 1, 0, ?SENTINEL_NODE}},
             base   = Base
            },
     add_nodes(Nodes, Ring).

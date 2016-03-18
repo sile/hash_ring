@@ -85,7 +85,7 @@ node_map() = #{<a href="hash_ring_node.md#type-key">hash_ring_node:key()</a> =&g
 
 
 <pre><code>
-option() = {module, <a href="#type-hash_ring_module">hash_ring_module()</a>} | {virtual_node_count, pos_integer()} | {max_hash_byte_size, pos_integer()} | {hash_algorithm, <a href="#type-hash_algorithm">hash_algorithm()</a>} | <a href="hash_ring_static.md#type-option">hash_ring_static:option()</a>
+option() = {module, <a href="#type-hash_ring_module">hash_ring_module()</a>} | {virtual_node_count, pos_integer()} | {max_hash_byte_size, pos_integer()} | {hash_algorithm, <a href="#type-hash_algorithm">hash_algorithm()</a>}
 </code></pre>
 
  module:

@@ -76,15 +76,12 @@
 -type option() :: {module, hash_ring_module()}
                 | {virtual_node_count, pos_integer()}
                 | {max_hash_byte_size, pos_integer()}
-                | {hash_algorithm, hash_algorithm()}
-                | hash_ring_static:option().
+                | {hash_algorithm, hash_algorithm()}.
 %% module:
 %% - The `hash_ring' implementation module which will be used to create and manipulate a hash ring instance.
 %% - The default value is `hash_ring_static'.
 %%
 %% TODO: (virtual_node_count * weight is real ...)
-%%
-%% Others are implementation specific options.
 
 -type hash_algorithm() :: crc32 | phash2 | md5 | sha | sha256.
 %% The hash algorithm which is used to determine locations of nodes and items on a ring
