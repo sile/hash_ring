@@ -41,6 +41,18 @@ list_to_nodes_test_() ->
       end}
     ].
 
+misc_test_() ->
+    [
+     {"The difference of the implementation module does not affect the logical ring structure",
+      fun () ->
+              Nodes = hash_ring:list_to_nodes(lists:seq(1, 100)),
+              Rings =
+                  [?MAKE_RING(Module, Nodes) || Module <- ?MODULES],
+              [?assertEqual(hash_ring:collect_nodes(foo, 100, A), hash_ring:collect_nodes(foo, 100, B))
+               || A <- Rings, B <- Rings]
+      end}
+    ].
+
 gen_make_test(Module) ->
     ModuleName = atom_to_list(Module),
     [
