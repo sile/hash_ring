@@ -81,7 +81,19 @@
 %% - The `hash_ring' implementation module which will be used to create and manipulate a hash ring instance.
 %% - The default value is `hash_ring_static'.
 %%
-%% TODO: (virtual_node_count * weight is real ...)
+%% virtual_node_count:
+%% - The number of virtual nodes per node on the ring
+%% - The larger value is good for balancing of the ring but it consumes more memory
+%% - Actual virtual node count of a node is calculated by `round(virtual_node_count * get_weight(Node))'
+%% - The default value is `256'
+%%
+%% max_hash_byte_size:
+%% - The maximum number of significant bytes
+%% - The default value is `4'
+%%
+%% hash_algorithm:
+%% - The hash algorithm used for the ring
+%% - The default value is `md5'
 
 -type hash_algorithm() :: crc32 | phash2 | md5 | sha | sha256.
 %% The hash algorithm which is used to determine locations of nodes and items on a ring
