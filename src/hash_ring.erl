@@ -56,7 +56,7 @@
 -opaque ring(_Key, _Data) :: #?RING{}.
 %% A consistent hash ring.
 %%
-%% It is a unidirection ring.
+%% It is an unidirection ring.
 
 -type ring_node() :: hash_ring_node:ring_node().
 %% A node on a ring

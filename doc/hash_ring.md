@@ -125,7 +125,7 @@ __abstract datatype__: `ring(_Key, _Data)`
 
  A consistent hash ring.
 
-It is a unidirection ring.
+It is an unidirection ring.
 
 
 
