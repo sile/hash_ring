@@ -11,7 +11,7 @@ For example, if a node leaves  the cluster, the items handled by the node should
 But other items can remain in the current nodes.
 Thus only 1/N items are affected by the leaving (where 'N' is the number of nodes in the cluster).
 
-See [Reference](#Reference) for more information.
+See [Reference](#reference) for more information.
 
 Build
 -----
@@ -40,32 +40,48 @@ Example
 -------
 
 ```erlang
-%% ハッシュリングの作成
-> Nodes = lists:map(fun hash_ring_node:make/1, [a,b,c,d,e]).
+%% Builds a consistent hash ring
+> Nodes = hash_ring:list_to_nodes([a,b,c,d,e]).
 [{hash_ring_node,a,a,1},
  {hash_ring_node,b,b,1},
  {hash_ring_node,c,c,1},
  {hash_ring_node,d,d,1},
  {hash_ring_node,e,e,1}]
 
-> Ring = hash_ring:make(Nodes).
+> Ring0 = hash_ring:make(Nodes).
 
-%% アイテムを担当するノードを検索する
-> hash_ring:find_node(item_1, Ring).
+%% Finds the node which handles the item
+> hash_ring:find_node(item_1, Ring0).
 {ok,{hash_ring_node,c,c,1}}
 
-%% アイテムを起点に、ノードを畳み込む
-> hash_ring:fold(fun (Node, Acc) -> {true, Acc ++ [hash_ring_node:get_key(Node)]} end, item_1, [], Ring).
-[c,e,d,b,a]  % 優先度が高い順に操作される
+%% Collects four nodes in descending order of priority
+> hash_ring:collect_nodes(item_1, 4, Ring0).
+[{hash_ring_node,c,c,1},
+ {hash_ring_node,e,e,1},
+ {hash_ring_node,b,b,1},
+ {hash_ring_node,d,d,1}]
 
-> hash_ring:fold(fun (Node, Acc) -> {true, Acc ++ [hash_ring_node:get_key(Node)]} end, item_2, [], Ring).
-[d,c,a,b,e]
+%% Addition of a node
+> Ring1 = hash_ring:add_node(hash_ring_node:make(g), Ring0).
+> hash_ring:collect_nodes(item_1, 4, Ring1).
+[{hash_ring_node,c,c,1},
+ {hash_ring_node,e,e,1},
+ {hash_ring_node,b,b,1},
+ {hash_ring_node,g,g,1}] % The fourth node is changed from 'd' to 'g'
+
+%% Removal of a node
+> Ring2 = hash_ring:remove_node(c, Ring1).
+> hash_ring:collect_nodes(item_1, 4, Ring2).
+[{hash_ring_node,e,e,1}, % 'c' is removed but The remaining order is unchanged
+ {hash_ring_node,b,b,1},
+ {hash_ring_node,g,g,1},
+ {hash_ring_node,d,d,1}]
 ```
 
 API
 ---
 
-See [EDoc Document](doc/README.md)
+See [EDoc Documents](doc/README.md)
 
 Reference
 ---------
@@ -80,4 +96,4 @@ Licence
 -------
 
 This library is released under the MIT License.
-See the [LICENSE] file for full license information.
+See the [COPYING](COPYING) file for full license information.
