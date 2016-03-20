@@ -1,9 +1,44 @@
 hash_ring
 =========
-Erlangによるコンシステントハッシュ法を使ったノードリングの実装。
 
-使用例
-------
+An implementation of consistent hashing algorithm.
+
+This algorithm determines which nodes handles which items by hashing.
+
+Consisntent hashing is suitable to manage nodes in environments in which nodes dynamically joins and leaves.
+
+For example, if a node leaves  the cluster, the items handled by the node should be reassigned to other nodes.
+But other items can remain in the current nodes.
+Thus only 1/N items are affected by the leaving (where 'N' is the number of nodes in the cluster).
+
+See [Reference](#Reference) for more information.
+
+Build
+-----
+
+To build the library for stand-alone usage:
+```sh
+$ git clone https://github.com/sile/hash_ring.git
+$ cd hash_ring
+$ ./rebar3 compile
+$ ./rebar3 shell
+$ > hash_ring:module_info().
+```
+
+If you want to use from your application:
+```erlang
+%% In your 'rebar.config'
+
+%% Add following lines
+{deps,
+ [
+   hash_ring
+ ]}.
+```
+
+Example
+-------
+
 ```erlang
 %% ハッシュリングの作成
 > Nodes = lists:map(fun hash_ring_node:make/1, [a,b,c,d,e]).
@@ -30,14 +65,19 @@ Erlangによるコンシステントハッシュ法を使ったノードリン�
 API
 ---
 
-[EDoc](doc/README.md)を参照
+See [EDoc Document](doc/README.md)
 
 Reference
 ---------
 
+- https://en.wikipedia.org/wiki/Consistent_hashing
 - [Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web](https://www.akamai.com/us/en/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf)
 
-TODO
-----
+Benchmark
+---------
 
-- benchmark (static|dyamic, create|add|remove|fold, hipe, memory)
+Licence
+-------
+
+This library is released under the MIT License.
+See the [LICENSE] file for full license information.
