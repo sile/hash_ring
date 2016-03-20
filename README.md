@@ -118,8 +118,8 @@ A result of `hash_ring_bench:bench(500, [])`.
 | hash_ring_static  | 14.332 ms |    4.323 ms | 0.00144 ms |
 | hash_ring_dynamic |  0.762 ms |    0.734 ms | 0.00228 ms |
 
-Licence
+License
 -------
 
 This library is released under the MIT License.
-See the [COPYING](COPYING) file for full license information.
+See the [LICENSE](LICENSE) file for full license information.
