@@ -7,7 +7,7 @@
 %% Dynamic addition and removal of nodes require O(log N) time.
 %% It is superior to {@link hash_ring_dynamic} at the expense of node search efficiency and memory footprint.
 %%
-%% See [README.md](../README.md#Benchmark) for a benchmark result.
+%% See [README.md](../README.md#benchmark) for a benchmark result.
 %%
 %% @end
 -module(hash_ring_dynamic).

@@ -92,6 +92,32 @@ Reference
 Benchmark
 ---------
 
+A simple benchmark result for a 500 nodes ring.
+
+### Environment
+
+- OS: Ubuntu 15.10
+- CPU: Intel(R) Core(TM) i7-6600U CPU @ 2.60GHz
+- Erlang/OTP: OTP18.2 ([package](https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_18.2-1~ubuntu~wily_amd64.deb))
+
+### Result
+
+A result of `hash_ring_bench:bench(500, [])`.
+
+#### Toal Time and Heap Size
+
+| module            | make_time | add_time | remove_time | find_time | heap_size |
+|:------------------|----------:|---------:|------------:|----------:|----------:|
+| hash_ring_static  |    178 ms |  7166 ms |     2162 ms |  0.722 ms |   1406 KB |
+| hash_ring_dynamic |    396 ms |   381 ms |      367 ms |  1.141 ms |   6191 KB |
+
+#### Average Time per Node (or Item)
+
+| module            | add_time  | remove_time | find_time  |
+|:------------------|----------:|------------:|-----------:|
+| hash_ring_static  | 14.332 ms |    4.323 ms | 0.00144 ms |
+| hash_ring_dynamic |  0.762 ms |    0.734 ms | 0.00228 ms |
+
 Licence
 -------
 
