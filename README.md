@@ -11,7 +11,7 @@ Consisntent hashing is suitable to manage nodes in environments in which nodes d
 
 For example, if a node leaves  the cluster, the items handled by the node should be reassigned to other nodes.
 But other items can remain in the current nodes.
-Thus only 1/N items are affected by the leaving (where 'N' is the number of nodes in the cluster).
+Thus in average case, only 1/N items are affected by the leaving (where 'N' is the number of nodes in the cluster).
 
 See [Reference](#reference) for more information.
 
