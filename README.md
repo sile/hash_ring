@@ -1,6 +1,8 @@
 hash_ring
 =========
 
+[![hex.pm version](https://img.shields.io/hexpm/v/hash_ring.svg)](https://hex.pm/packages/hash_ring)
+
 An implementation of consistent hashing algorithm.
 
 This algorithm determines which nodes handles which items by hashing.
