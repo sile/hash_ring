@@ -2,12 +2,15 @@
 {application, hash_ring,
  [
   {description, "Consistent Hash Ring"},
-  {vsn, git},
+  {vsn, "0.4.0"},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib,
                   crypto
                  ]},
+  {maintainers, ["Takeru Ohta"]},
+  {licenses, ["MIT"]},
+  {links ,[{"GitHub","https://github.com/sile/hash_ring"}]},
   {env, []}
  ]}.
