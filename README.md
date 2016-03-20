@@ -74,7 +74,7 @@ Example
 %% Removal of a node
 > Ring2 = hash_ring:remove_node(c, Ring1).
 > hash_ring:collect_nodes(item_1, 4, Ring2).
-[{hash_ring_node,e,e,1}, % 'c' is removed but The remaining order is unchanged
+[{hash_ring_node,e,e,1}, % 'c' is removed but the remaining order is unchanged
  {hash_ring_node,b,b,1},
  {hash_ring_node,g,g,1},
  {hash_ring_node,d,d,1}]
