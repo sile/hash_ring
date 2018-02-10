@@ -47,9 +47,11 @@
 -type options() :: [option()].
 -type option() :: {weight, weight()}.
 %% weight:
-%% - A coefficient which is used to determine the virtual node count of the node.
-%% - The higher the value, the number of virtual nodes increases, likely to be more selected.
-%% - The default value is `1'.
+%% <ul>
+%% <li>A coefficient which is used to determine the virtual node count of the node.</li>
+%% <li>The higher the value, the number of virtual nodes increases, likely to be more selected.</li>
+%% <li>The default value is `1'.</li>
+%% </ul>
 
 %%----------------------------------------------------------------------------------------------------------------------
 %% Exported Functions

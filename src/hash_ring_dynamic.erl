@@ -2,12 +2,12 @@
 %%
 %% @doc Balanced Tree based `hash_ring' Implementation Module
 %%
-%% This module represents a ring (i.e., virtual nodes) as a [General Balanced Tree](http://erlang.org/doc/man/gb_trees.html).
+%% This module represents a ring (i.e., virtual nodes) as a <a href="http://erlang.org/doc/man/gb_trees.html">General Balanced Tree</a>.
 %%
 %% Dynamic addition and removal of nodes require O(log N) time.
 %% It is superior to {@link hash_ring_dynamic} at the expense of node search efficiency and memory footprint.
 %%
-%% See [README.md](../README.md#benchmark) for a benchmark result.
+%% See <a href="https://github.com/sile/hash_ring#benchmark">README.md</a> for a benchmark result.
 %%
 %% @end
 -module(hash_ring_dynamic).

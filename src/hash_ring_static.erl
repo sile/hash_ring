@@ -8,7 +8,7 @@
 %% But dynamic addition and removal of nodes require O(N log N) and O(N) time respectively
 %% (where N is the number of nodes in the ring).
 %%
-%% See [README.md](../README.md#benchmark) for a benchmark result.
+%% See <a href="https://github.com/sile/hash_ring#benchmark">README.md</a> for a benchmark result.
 %%
 %% @end
 -module(hash_ring_static).
