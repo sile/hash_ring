@@ -25,8 +25,8 @@ To build the library for stand-alone usage:
 ```sh
 $ git clone https://github.com/sile/hash_ring.git
 $ cd hash_ring
-$ ./rebar3 compile
-$ ./rebar3 shell
+$ rebar3 compile
+$ rebar3 shell
 $ > hash_ring:module_info().
 ```
 
