@@ -28,7 +28,7 @@
 %%----------------------------------------------------------------------------------------------------------------------
 %% Exported Functions
 %%----------------------------------------------------------------------------------------------------------------------
--spec bench(non_neg_integer(), hash_ring:options()) -> [{Module, Result}] when
+-spec bench(non_neg_integer(), hash_ring:options()) -> [{Module, [Result]}] when
       Module :: hash_ring_static | hash_ring_dynamic,
       Result :: {make_time, elapsed_time()}
               | {add_time, elapsed_time()}
