@@ -18,7 +18,7 @@ script:
   - ./rebar3 dialyzer
   - ./rebar3 edoc
   - ./rebar3 cover
-  - ./rebar3 covertool generate
+  - ./rebar3 as test covertool generate
   - cp _build/test/covertool/hash_ring.covertool.xml ./cobertura.xml
 
 after_success:
