@@ -4,3 +4,4 @@
 /doc/
 /ebin/
 .dialyzer.plt
+/_build/
