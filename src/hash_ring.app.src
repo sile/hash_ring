@@ -1,6 +1,6 @@
 {application,hash_ring,
              [{description,"Consistent Hash Ring"},
-              {vsn,"0.4.1"},
+              {vsn,"0.4.2"},
               {registered,[]},
               {applications,[kernel,stdlib,crypto]},
               {licenses,["MIT"]},
