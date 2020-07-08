@@ -3,7 +3,6 @@
               {vsn,"0.4.1"},
               {registered,[]},
               {applications,[kernel,stdlib,crypto]},
-              {maintainers,["Takeru Ohta"]},
               {licenses,["MIT"]},
               {links,[{"GitHub","https://github.com/sile/hash_ring"}]},
               {env,[]}]}.
