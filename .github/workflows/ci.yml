@@ -17,7 +17,6 @@ jobs:
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
-      - run: sudo pip install codecov
       - run: rebar3 compile
       - run: rebar3 xref
       - run: rebar3 eunit
@@ -28,5 +27,7 @@ jobs:
       - run: cp _build/test/covertool/hash_ring.covertool.xml ./cobertura.xml
   cov:
     needs: ci
+    runs-on: ubuntu-latest
     steps:
+      - run: sudo pip install codecov
       - run: codecov
