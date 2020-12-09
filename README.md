@@ -2,7 +2,7 @@ hash_ring
 =========
 
 [![hex.pm version](https://img.shields.io/hexpm/v/hash_ring.svg)](https://hex.pm/packages/hash_ring)
-[![Build Status](https://travis-ci.org/sile/hash_ring.svg?branch=master)](https://travis-ci.org/sile/hash_ring)
+[![Build Status](https://github.com/sile/hash_ring/workflows/build/badge.svg)](https://github.com/sile/hash_ring)
 [![Code Coverage](https://codecov.io/gh/sile/hash_ring/branch/master/graph/badge.svg)](https://codecov.io/gh/sile/hash_ring/branch/master)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
