@@ -1,6 +1,7 @@
 *~
 *.beam
 /.*/
+!.github/
 /doc/*
 !/doc/*.md
 /ebin/
