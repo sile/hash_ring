@@ -17,7 +17,6 @@ jobs:
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
-      - run: sudo pip install codecov
       - run: rebar3 compile
       - run: rebar3 xref
       - run: rebar3 eunit
@@ -30,4 +29,5 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     steps:
+      - run: sudo pip install codecov
       - run: codecov
