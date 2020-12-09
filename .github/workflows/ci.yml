@@ -28,5 +28,6 @@ jobs:
       - run: cp _build/test/covertool/hash_ring.covertool.xml ./cobertura.xml
   cov:
     needs: ci
+    runs-on: ubuntu-latest
     steps:
       - run: codecov
