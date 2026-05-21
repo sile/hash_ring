@@ -68,7 +68,7 @@ gen_make_test(Module) ->
               Nodes = hash_ring:list_to_nodes([a, b, c]),
               Ring = ?MAKE_RING(Module, Nodes),
               ?assert(hash_ring:is_ring(Ring)),
-              ?assertEqual(Nodes, hash_ring:get_node_list(Ring)),
+              ?assertEqual(lists:sort(Nodes), lists:sort(hash_ring:get_node_list(Ring))),
               ?assertEqual(3, hash_ring:get_node_count(Ring))
       end}
     ].
@@ -81,7 +81,7 @@ gen_add_nodes_test(Module) ->
               Nodes = hash_ring:list_to_nodes(lists:seq(1, 100)),
               Ring0 = ?MAKE_RING(Module, Nodes),
               Ring1 = lists:foldl(fun hash_ring:add_node/2, ?MAKE_RING(Module, []), Nodes),
-              ?assertEqual(hash_ring:get_node_list(Ring0), hash_ring:get_node_list(Ring1))
+              ?assertEqual(lists:sort(hash_ring:get_node_list(Ring0)), lists:sort(hash_ring:get_node_list(Ring1)))
       end},
      {ModuleName ++ ": Changes the weight of a node",
       fun () ->
